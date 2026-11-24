@@ -1,0 +1,336 @@
+const collator = new Intl.Collator(undefined, { sensitivity: "base", numeric: true });
+
+const STATUS_CLASSES = {
+  HOSTILE: "status-hostile",
+  DANGEROUS: "status-hostile",
+  MONITORED: "status-monitored",
+  NEUTRAL: "status-neutral",
+  CONTAINED: "status-contained"
+};
+
+export function createWatchtowerNode({
+  viewEl,
+  titleEl,
+  subNavEl,
+  searchEl,
+  sortEl,
+  bodyEl,
+  notesDialogEl,
+  notesTitleEl,
+  notesListEl,
+  closeNotesEl,
+  databasePanelEl,
+  recorderPanelEl,
+  recorderFormEl,
+  recorderRowsEl,
+  targetSuggestionsEl,
+  affiliationSuggestionsEl,
+  statusSuggestionsEl,
+  addRowBtn,
+  rowCountEl,
+  submitBatchBtn,
+  recorderMessageEl,
+  onSubmitTraceBatch
+}) {
+  let records = [];
+  let activePanel = "recorder";
+
+  const INITIAL_ROW_COUNT = 10;
+  const MAX_ROW_COUNT = 30;
+
+  function updateRowCount() {
+    const count = recorderRowsEl.childElementCount;
+    rowCountEl.textContent = `${count} / ${MAX_ROW_COUNT} rows`;
+    addRowBtn.disabled = count >= MAX_ROW_COUNT;
+  }
+
+  function addRow() {
+    if (recorderRowsEl.childElementCount >= MAX_ROW_COUNT) {
+      recorderMessageEl.textContent = "A batch can contain up to 30 rows.";
+      return;
+    }
+
+    const rowNumber = recorderRowsEl.childElementCount + 1;
+    const row = document.createElement("tr");
+    const fields = [
+      { name: "name", label: `Row ${rowNumber} target name`, maxLength: 100 },
+      { name: "affiliation", label: `Row ${rowNumber} affiliation`, maxLength: 120 },
+      { name: "status", label: `Row ${rowNumber} status`, maxLength: 40 },
+      { name: "note", label: `Row ${rowNumber} notes`, maxLength: 1000 }
+    ];
+
+    for (const field of fields) {
+      const cell = document.createElement("td");
+      const input = document.createElement(field.name === "note" ? "textarea" : "input");
+      input.name = field.name;
+      input.setAttribute("aria-label", field.label);
+      input.maxLength = field.maxLength;
+      const suggestionLists = {
+        name: targetSuggestionsEl,
+        affiliation: affiliationSuggestionsEl,
+        status: statusSuggestionsEl
+      };
+      if (suggestionLists[field.name]) input.setAttribute("list", suggestionLists[field.name].id);
+      if (field.name === "note") input.rows = 1;
+      cell.append(input);
+      row.append(cell);
+    }
+
+    const nameInput = row.querySelector('[name="name"]');
+    const affiliationInput = row.querySelector('[name="affiliation"]');
+    const statusInput = row.querySelector('[name="status"]');
+    let autoFilledDetails;
+    const fillSavedTargetDetails = () => {
+      const target = records.find((record) =>
+        String(record.name ?? "").trim().toLocaleLowerCase()
+          === nameInput.value.trim().toLocaleLowerCase()
+      );
+      if (target) {
+        affiliationInput.value = target.affiliation ?? "";
+        statusInput.value = target.status ?? "";
+        autoFilledDetails = { affiliation: affiliationInput.value, status: statusInput.value };
+        return;
+      }
+      if (!autoFilledDetails) return;
+      if (affiliationInput.value === autoFilledDetails.affiliation) affiliationInput.value = "";
+      if (statusInput.value === autoFilledDetails.status) statusInput.value = "";
+      autoFilledDetails = undefined;
+    };
+    nameInput.addEventListener("input", fillSavedTargetDetails);
+    nameInput.addEventListener("change", fillSavedTargetDetails);
+
+    recorderRowsEl.append(row);
+    updateRowCount();
+    recorderMessageEl.textContent = "";
+  }
+
+  function resetRows() {
+    recorderRowsEl.replaceChildren();
+    for (let index = 0; index < INITIAL_ROW_COUNT; index += 1) addRow();
+  }
+
+  function showPanel(panel) {
+    activePanel = panel;
+    databasePanelEl.hidden = panel !== "database";
+    recorderPanelEl.hidden = panel !== "recorder";
+    for (const button of subNavEl.querySelectorAll("button[data-watchtower-panel]")) {
+      const active = button.dataset.watchtowerPanel === panel;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-current", active ? "page" : "false");
+    }
+    if (panel === "recorder" && recorderRowsEl.childElementCount === 0) resetRows();
+  }
+
+  addRowBtn.addEventListener("click", addRow);
+  recorderFormEl.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const entries = [];
+    let incompleteRow;
+    for (const row of recorderRowsEl.querySelectorAll("tr")) {
+      const value = (name) => row.querySelector(`[name="${name}"]`).value.trim();
+      const entry = {
+        name: value("name"),
+        affiliation: value("affiliation"),
+        status: value("status"),
+        note: value("note")
+      };
+      if (!entry.name && (entry.affiliation || entry.status || entry.note)) {
+        incompleteRow = row;
+        break;
+      }
+      if (entry.name) entries.push(entry);
+    }
+
+    if (incompleteRow) {
+      recorderMessageEl.textContent = "Add a name to every row that has other information, or clear that row.";
+      incompleteRow.querySelector('[name="name"]').focus();
+      return;
+    }
+    if (entries.length === 0) {
+      recorderMessageEl.textContent = "Enter at least one target before submitting.";
+      recorderRowsEl.querySelector('[name="name"]').focus();
+      return;
+    }
+
+    addRowBtn.disabled = true;
+    submitBatchBtn.disabled = true;
+    recorderMessageEl.textContent = "Submitting trace batch…";
+    try {
+      const result = await onSubmitTraceBatch(entries);
+      resetRows();
+      recorderMessageEl.textContent = `${result.count} trace${result.count === 1 ? "" : "s"} recorded.${result.refreshed ? " Watchtower is up to date." : " Saved; the database view will refresh next time you open it."}`;
+    } catch (error) {
+      console.error(error);
+      recorderMessageEl.textContent = `Trace batch was not submitted. ${error.message ?? "Check your connection and try again."}`;
+    } finally {
+      submitBatchBtn.disabled = false;
+      updateRowCount();
+    }
+  });
+
+  function getNotes(row) {
+    if (Array.isArray(row.notes)) return row.notes;
+    return row.notes ? [row.notes] : [];
+  }
+
+  function openNotes(row) {
+    notesTitleEl.textContent = row.name ?? "Unknown";
+    const fragment = document.createDocumentFragment();
+    for (const note of getNotes(row)) {
+      const item = document.createElement("li");
+      item.append(document.createTextNode(String(typeof note === "string" ? note : note?.text ?? "")));
+      if (typeof note === "object" && note?.author) {
+        const author = document.createElement("span");
+        author.className = "note-meta";
+        author.textContent = `Added by ${note.author}`;
+        item.append(author);
+      }
+      if (typeof note === "object" && note?.addedAt) {
+        const time = document.createElement("time");
+        time.className = "note-meta";
+        time.dateTime = note.addedAt;
+        const date = new Date(`${note.addedAt}T12:00:00Z`);
+        time.textContent = Number.isNaN(date.valueOf())
+          ? note.addedAt
+          : new Intl.DateTimeFormat(undefined, { dateStyle: "long", timeZone: "UTC" }).format(date);
+        item.append(time);
+      }
+      fragment.append(item);
+    }
+    notesListEl.replaceChildren(fragment);
+    notesDialogEl.showModal();
+  }
+
+  closeNotesEl.addEventListener("click", () => notesDialogEl.close());
+  notesDialogEl.addEventListener("click", (event) => {
+    if (event.target === notesDialogEl) notesDialogEl.close();
+  });
+
+  function renderRows() {
+    const q = searchEl.value.trim().toLowerCase();
+    const [sortField, sortDirection] = sortEl.value.split("-");
+    const direction = sortDirection === "desc" ? -1 : 1;
+
+    const rows = records
+      .filter((row) =>
+        [
+          row.name,
+          row.affiliation,
+          row.traces,
+          row.status,
+          ...getNotes(row).map((note) => typeof note === "string" ? note : note?.text)
+        ]
+          .some((val) => String(val ?? "").toLowerCase().includes(q))
+      )
+      .sort((a, b) => {
+        const comparison = sortField === "traces"
+          ? (Number(a.traces) || 0) - (Number(b.traces) || 0)
+          : collator.compare(a[sortField] ?? "", b[sortField] ?? "");
+        return comparison === 0
+          ? collator.compare(a.name ?? "", b.name ?? "")
+          : comparison * direction;
+      });
+
+    const fragment = document.createDocumentFragment();
+
+    for (const row of rows) {
+      const tr = document.createElement("tr");
+      const statusRaw = String(row.status ?? "").trim().toUpperCase();
+      const statusClass = STATUS_CLASSES[statusRaw] ?? "";
+
+      if (statusClass) {
+        tr.classList.add(`row-${statusClass}`);
+      }
+
+      const nameTd = document.createElement("td");
+      const nameButton = document.createElement("button");
+      const notes = getNotes(row);
+      nameButton.type = "button";
+      nameButton.className = "person-name";
+      nameButton.textContent = row.name ?? "";
+      nameButton.setAttribute(
+        "aria-label",
+        notes.length ? `Open ${notes.length} notes for ${row.name}` : `Open notes for ${row.name}`
+      );
+      if (notes.length) {
+        const marker = document.createElement("span");
+        marker.className = "notes-marker";
+        marker.textContent = "*";
+        marker.setAttribute("aria-hidden", "true");
+        nameButton.append(marker);
+      }
+      nameButton.addEventListener("click", () => openNotes(row));
+      nameTd.append(nameButton);
+
+      const affiliationTd = document.createElement("td");
+      affiliationTd.textContent = row.affiliation ?? "";
+
+      const tracesTd = document.createElement("td");
+      tracesTd.textContent = row.traces ?? "";
+
+      const statusTd = document.createElement("td");
+      statusTd.textContent = row.status ?? "";
+      if (statusClass) {
+        statusTd.className = statusClass;
+      }
+
+      tr.append(nameTd, affiliationTd, statusTd, tracesTd);
+      fragment.append(tr);
+    }
+
+    bodyEl.replaceChildren(fragment);
+  }
+
+  searchEl.addEventListener("input", renderRows);
+  sortEl.addEventListener("change", renderRows);
+
+  return {
+    setData(data) {
+      records = Array.isArray(data) ? data : [];
+      titleEl.textContent = `Node-01-Watchtower (${records.length})`;
+      const makeSuggestions = (field) => {
+        const suggestions = new Map();
+        for (const record of records) {
+          const value = String(record[field] ?? "").trim();
+          const normalized = value.toLocaleLowerCase();
+          if (value && !suggestions.has(normalized)) suggestions.set(normalized, value);
+        }
+        return [...suggestions.values()]
+          .sort(collator.compare)
+          .map((value) => {
+            const option = document.createElement("option");
+            option.value = value;
+            return option;
+          });
+      };
+      targetSuggestionsEl.replaceChildren(...makeSuggestions("name"));
+      affiliationSuggestionsEl.replaceChildren(...makeSuggestions("affiliation"));
+      statusSuggestionsEl.replaceChildren(...makeSuggestions("status"));
+      renderRows();
+    },
+    renderSubNav() {
+      const databaseBtn = document.createElement("button");
+      databaseBtn.type = "button";
+      databaseBtn.textContent = "TRACE DATABASE";
+      databaseBtn.dataset.watchtowerPanel = "database";
+      databaseBtn.addEventListener("click", () => showPanel("database"));
+
+      const recorderBtn = document.createElement("button");
+      recorderBtn.type = "button";
+      recorderBtn.textContent = "TRACE RECORDER";
+      recorderBtn.dataset.watchtowerPanel = "recorder";
+      recorderBtn.addEventListener("click", () => showPanel("recorder"));
+
+      subNavEl.replaceChildren(recorderBtn, databaseBtn);
+    },
+    show() {
+      viewEl.hidden = false;
+      this.renderSubNav();
+      showPanel(activePanel);
+      renderRows();
+    },
+    hide() {
+      viewEl.hidden = true;
+    }
+  };
+}

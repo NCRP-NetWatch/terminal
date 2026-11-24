@@ -1,0 +1,4 @@
+project_id = "ncrpnetwatch-terminal"
+
+[functions.watchtower-discord-notify]
+verify_jwt = false

@@ -1,0 +1,3 @@
+# Keep local Supabase function secrets out of version control.
+/supabase/functions/.env
+/supabase/functions/**/.env

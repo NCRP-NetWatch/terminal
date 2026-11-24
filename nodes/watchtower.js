@@ -1,3 +1,5 @@
+import { renderNavButtons } from "./navigation.js";
+
 const collator = new Intl.Collator(undefined, { sensitivity: "base", numeric: true });
 
 const STATUS_CLASSES = {
@@ -7,6 +9,13 @@ const STATUS_CLASSES = {
   NEUTRAL: "status-neutral",
   CONTAINED: "status-contained"
 };
+
+const TRACE_LOG_NOTE = /^Trace Recorded \(\+1\)$/i;
+
+const WATCHTOWER_PANELS = [
+  { id: "recorder", label: "TRACE RECORDER" },
+  { id: "database", label: "TRACE DATABASE" }
+];
 
 export function createWatchtowerNode({
   viewEl,
@@ -113,11 +122,6 @@ export function createWatchtowerNode({
     activePanel = panel;
     databasePanelEl.hidden = panel !== "database";
     recorderPanelEl.hidden = panel !== "recorder";
-    for (const button of subNavEl.querySelectorAll("button[data-watchtower-panel]")) {
-      const active = button.dataset.watchtowerPanel === panel;
-      button.classList.toggle("active", active);
-      button.setAttribute("aria-current", active ? "page" : "false");
-    }
     if (panel === "recorder" && recorderRowsEl.childElementCount === 0) resetRows();
   }
 
@@ -168,9 +172,27 @@ export function createWatchtowerNode({
     }
   });
 
-  function getNotes(row) {
+  function getRawNotes(row) {
     if (Array.isArray(row.notes)) return row.notes;
     return row.notes ? [row.notes] : [];
+  }
+
+  function getNoteText(note) {
+    return String(typeof note === "string" ? note : note?.text ?? "").trim();
+  }
+
+  function isTraceLogNote(note) {
+    return TRACE_LOG_NOTE.test(getNoteText(note));
+  }
+
+  function hasContentNote(row) {
+    return getRawNotes(row).some((note) => getNoteText(note) && !isTraceLogNote(note));
+  }
+
+  function getNotes(row) {
+    const notes = getRawNotes(row);
+    const contentNotes = notes.filter((note) => getNoteText(note) && !isTraceLogNote(note));
+    return contentNotes.length ? contentNotes : notes.filter(isTraceLogNote);
   }
 
   function openNotes(row) {
@@ -178,7 +200,7 @@ export function createWatchtowerNode({
     const fragment = document.createDocumentFragment();
     for (const note of getNotes(row)) {
       const item = document.createElement("li");
-      item.append(document.createTextNode(String(typeof note === "string" ? note : note?.text ?? "")));
+      item.append(document.createTextNode(getNoteText(note)));
       if (typeof note === "object" && note?.author) {
         const author = document.createElement("span");
         author.className = "note-meta";
@@ -245,14 +267,19 @@ export function createWatchtowerNode({
       const nameTd = document.createElement("td");
       const nameButton = document.createElement("button");
       const notes = getNotes(row);
+      const hasNotes = hasContentNote(row);
       nameButton.type = "button";
       nameButton.className = "person-name";
       nameButton.textContent = row.name ?? "";
       nameButton.setAttribute(
         "aria-label",
-        notes.length ? `Open ${notes.length} notes for ${row.name}` : `Open notes for ${row.name}`
+        hasNotes
+          ? `Open ${notes.length} notes for ${row.name}`
+          : notes.length
+            ? `Open trace log for ${row.name}`
+            : `Open notes for ${row.name}`
       );
-      if (notes.length) {
+      if (hasNotes) {
         const marker = document.createElement("span");
         marker.className = "notes-marker";
         marker.textContent = "*";
@@ -308,24 +335,12 @@ export function createWatchtowerNode({
       statusSuggestionsEl.replaceChildren(...makeSuggestions("status"));
       renderRows();
     },
-    renderSubNav() {
-      const databaseBtn = document.createElement("button");
-      databaseBtn.type = "button";
-      databaseBtn.textContent = "TRACE DATABASE";
-      databaseBtn.dataset.watchtowerPanel = "database";
-      databaseBtn.addEventListener("click", () => showPanel("database"));
-
-      const recorderBtn = document.createElement("button");
-      recorderBtn.type = "button";
-      recorderBtn.textContent = "TRACE RECORDER";
-      recorderBtn.dataset.watchtowerPanel = "recorder";
-      recorderBtn.addEventListener("click", () => showPanel("recorder"));
-
-      subNavEl.replaceChildren(recorderBtn, databaseBtn);
-    },
     show() {
       viewEl.hidden = false;
-      this.renderSubNav();
+      renderNavButtons(subNavEl, WATCHTOWER_PANELS, {
+        activeId: activePanel,
+        onSelect: showPanel
+      });
       showPanel(activePanel);
       renderRows();
     },

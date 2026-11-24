@@ -29,7 +29,7 @@
           autocomplete="nickname"
           required
         />
-        <small class="agent-name-help">Use the name other personnel should see. Rank and node access are assigned by a Supervisor+.</small>
+        <small class="agent-name-help">Use the name other personnel should see. Rank and node access are assigned by a Supervisory Special Agent (SSA) or higher.</small>
         <button id="saveAgentName" class="auth-button" type="submit">Save Agent Name</button>
       </form>
       <button id="discordSignIn" class="auth-button" type="button">Continue with Discord</button>
@@ -51,7 +51,15 @@
       <nav id="nodeNav" class="node-nav" aria-label="Nodes"></nav>
       <img class="terminal-logo terminal-logo-gateway" src="./assets/gateway-logo.png" alt="Gateway terminal logo" />
       <nav id="subNav" class="sub-nav" aria-label="Node Selections"></nav>
+      <nav id="schoolhouseBadgeNav" class="badge-nav" aria-label="Badges" hidden></nav>
     </header>
+
+  <section id="homeView" class="home-view" hidden aria-labelledby="homeTitle">
+    <p class="home-kicker">NCRP // NETWATCH OPERATIONS</p>
+    <h1 id="homeTitle" class="node-title">Welcome to NetWatch</h1>
+    <p class="home-intro">Choose a node to get started.</p>
+    <div id="homeNodeGrid" class="home-node-grid"></div>
+  </section>
 
   <section id="watchtowerView" hidden>
     <h1 id="watchtowerTitle" class="node-title">Node-01-Watchtower (0)</h1>
@@ -107,7 +115,7 @@
             </div>
             <div class="status-key-item">
               <dt class="status-contained">CONTAINED</dt>
-              <dd>Under a protective agreement authorized by a Supervisor or higher. If traced, disconnect and redirect to a separate call.</dd>
+              <dd>Under a protective agreement authorized by a Supervisory Special Agent (SSA) or higher. If traced, disconnect and redirect to a separate call.</dd>
             </div>
           </dl>
         </aside>
@@ -157,7 +165,8 @@
 
   <section id="schoolhouseView" hidden>
     <h1 class="node-title">Node-03-Schoolhouse</h1>
-    <div class="workspace">
+    <p id="badgePrompt" class="badge-prompt">Choose a badge to preview and personalize it.</p>
+    <div id="badgeWorkspace" class="workspace" hidden>
       <div id="preview" class="preview"></div>
       <section class="placeholder-panel" aria-labelledby="placeholderTitle">
         <h2 id="placeholderTitle">PERSONALIZE BADGE</h2>

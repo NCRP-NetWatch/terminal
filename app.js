@@ -1,22 +1,33 @@
 import { createWatchtowerNode } from "./nodes/watchtower.js";
 import { createLibraryNode } from "./nodes/library.js";
 import { createSchoolhouseNode } from "./nodes/schoolhouse.js";
+import { renderNavButtons } from "./nodes/navigation.js";
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "./supabase-config.js";
 
 const NODES = [
-  { id: "watchtower", label: "NODE-01-WATCHTOWER" },
-  { id: "library", label: "NODE-02-LIBRARY" },
-  { id: "schoolhouse", label: "NODE-03-SCHOOLHOUSE" }
+  { id: "watchtower", label: "NODE-01-WATCHTOWER", title: "Watchtower", description: "Trace node; stores traces and cases" },
+  { id: "library", label: "NODE-02-LIBRARY", title: "Library", description: "Clerical/Logistics node; manages the budget and armory, contains the SOP, standing orders & other documents." },
+  { id: "schoolhouse", label: "NODE-03-SCHOOLHOUSE", title: "Schoolhouse", description: "Training node; stores training material." }
 ];
 
 const ACCESS_RANKS = new Set([
   "ncrp staff",
-  "operations manager",
-  "supervisor",
+  "special agent in charge",
+  "supervisory special agent",
   "special agent",
   "senior agent",
   "agent",
   "probationary agent"
+]);
+
+const RANK_ALIASES = new Map([
+  ["special agent in charge (sic)", "special agent in charge"],
+  ["supervisory special agent (ssa)", "supervisory special agent"]
+]);
+
+const RANK_LABELS = new Map([
+  ["special agent in charge", "SPECIAL AGENT IN CHARGE (SIC)"],
+  ["supervisory special agent", "SUPERVISORY SPECIAL AGENT (SSA)"]
 ]);
 
 const authGateEl = document.getElementById("authGate");
@@ -27,6 +38,9 @@ const agentNameFormEl = document.getElementById("agentNameForm");
 const agentNameInputEl = document.getElementById("agentNameInput");
 const saveAgentNameBtn = document.getElementById("saveAgentName");
 const terminalAppEl = document.getElementById("terminalApp");
+const homeViewEl = document.getElementById("homeView");
+const homeTitleEl = document.getElementById("homeTitle");
+const homeNodeGridEl = document.getElementById("homeNodeGrid");
 const nodeNavEl = document.getElementById("nodeNav");
 const subNavEl = document.getElementById("subNav");
 const agentIdentityEl = document.getElementById("agentIdentity");
@@ -68,6 +82,9 @@ const library = createLibraryNode({
 const schoolhouse = createSchoolhouseNode({
   viewEl: document.getElementById("schoolhouseView"),
   subNavEl,
+  badgeNavEl: document.getElementById("schoolhouseBadgeNav"),
+  badgePromptEl: document.getElementById("badgePrompt"),
+  badgeWorkspaceEl: document.getElementById("badgeWorkspace"),
   previewEl: document.getElementById("preview"),
   placeholderFieldsEl: document.getElementById("placeholderFields"),
   downloadBtn: document.getElementById("downloadBadge")
@@ -78,7 +95,7 @@ const loadedNodes = new Set();
 let supabaseClient;
 let currentProfile;
 let activeUserId;
-let activeNodeId = "library";
+let activeNodeId = "home";
 let sessionRequestId = 0;
 let nodeRenderRequestId = 0;
 let sessionGeneration = 0;
@@ -106,6 +123,7 @@ function clearTerminalData() {
   nodeRenderRequestId += 1;
   currentProfile = undefined;
   loadedNodes.clear();
+  homeViewEl.hidden = true;
   watchtower.setData([]);
   library.setDocuments([]);
   schoolhouse.setData([]);
@@ -116,28 +134,49 @@ function clearTerminalData() {
 }
 
 function normalizeRank(rank) {
-  return String(rank ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+  const normalized = String(rank ?? "").trim().toLowerCase().replace(/[_\s]+/g, " ");
+  return RANK_ALIASES.get(normalized) ?? normalized;
 }
 
 function getAllowedNodes(profile) {
   return ACCESS_RANKS.has(normalizeRank(profile.rank)) ? NODES : [];
 }
 
-function renderNodeNav(profile) {
-  const fragment = document.createDocumentFragment();
+function renderNodeNav(profile, activeId = activeNodeId) {
   const accessibleNodes = getAllowedNodes(profile);
-
-  for (const node of accessibleNodes) {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.textContent = node.label;
-    btn.dataset.node = node.id;
-    btn.addEventListener("click", () => void renderNode(node.id));
-    fragment.append(btn);
-  }
-
-  nodeNavEl.replaceChildren(fragment);
+  renderNavButtons(nodeNavEl, [{ id: "home", label: "HOME" }, ...accessibleNodes], {
+    activeId,
+    onSelect: (nodeId) => nodeId === "home" ? showHome() : void renderNode(nodeId)
+  });
   return accessibleNodes;
+}
+
+function showHome() {
+  if (!currentProfile) return;
+  nodeRenderRequestId += 1;
+  activeNodeId = "home";
+  homeTitleEl.textContent = `Welcome, ${currentProfile.agent_name?.trim() || "Agent"}`;
+  homeNodeGridEl.replaceChildren(...getAllowedNodes(currentProfile).map((node) => {
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "home-node-card";
+    const label = document.createElement("span");
+    label.className = "home-node-label";
+    label.textContent = node.label;
+    const title = document.createElement("strong");
+    title.className = "home-node-title";
+    title.textContent = node.title;
+    const description = document.createElement("span");
+    description.className = "home-node-description";
+    description.textContent = node.description;
+    card.append(label, title, description);
+    card.addEventListener("click", () => void renderNode(node.id));
+    return card;
+  }));
+  for (const controller of Object.values(nodeControllers)) controller.hide();
+  homeViewEl.hidden = false;
+  subNavEl.replaceChildren();
+  renderNodeNav(currentProfile, "home");
 }
 
 async function fetchPublicJson(url) {
@@ -233,8 +272,9 @@ async function renderNode(nodeId) {
 
   const requestId = ++nodeRenderRequestId;
   activeNodeId = nodeId;
-  for (const btn of nodeNavEl.querySelectorAll("button[data-node]")) {
-    const isCurrent = btn.dataset.node === nodeId;
+  homeViewEl.hidden = true;
+  for (const btn of nodeNavEl.querySelectorAll("button[data-nav-id]")) {
+    const isCurrent = btn.dataset.navId === nodeId;
     btn.classList.toggle("active", isCurrent);
     btn.setAttribute("aria-current", isCurrent ? "page" : "false");
   }
@@ -258,10 +298,8 @@ async function renderNode(nodeId) {
 }
 
 function formatRank(rank) {
-  return String(rank ?? "")
-    .replaceAll("_", " ")
-    .trim()
-    .toUpperCase();
+  const normalized = normalizeRank(rank);
+  return RANK_LABELS.get(normalized) ?? normalized.toUpperCase();
 }
 
 async function activateSession(session) {
@@ -330,24 +368,12 @@ async function activateSession(session) {
   }
 
   currentProfile = profile;
-  renderNodeNav(profile);
   agentIdentityEl.textContent = profile.agent_name?.trim() || "AGENT NAME UNASSIGNED";
   agentRankEl.textContent = formatRank(profile.rank);
   authGateEl.hidden = true;
   terminalAppEl.hidden = false;
 
-  const assignedNode = String(profile.assigned_node ?? "").trim().toLowerCase();
-  const initialNode = accessibleNodes.find((node) => node.id === assignedNode)?.id
-    ?? (accessibleNodes.some((node) => node.id === activeNodeId) ? activeNodeId : accessibleNodes[0]?.id);
-
-  if (!initialNode) {
-    showAuthGate("Your account has no node assignment. Contact an administrator for access.", {
-      allowSignOut: true
-    });
-    return;
-  }
-
-  await renderNode(initialNode);
+  showHome();
 }
 
 async function saveAgentName(event) {

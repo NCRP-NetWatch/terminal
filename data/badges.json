@@ -15,9 +15,9 @@
     "file": "./data/svg/senior-agent.svg"
   },
   {
-    "id": "supervisor",
-    "label": "SUPERVISOR",
-    "file": "./data/svg/supervisor.svg"
+    "id": "supervisory-special-agent",
+    "label": "SUPERVISORY SPECIAL AGENT (SSA)",
+    "file": "./data/svg/supervisory-special-agent.svg"
   },
   {
     "id": "section-chief",

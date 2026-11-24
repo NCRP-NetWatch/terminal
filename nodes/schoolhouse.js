@@ -1,3 +1,5 @@
+import { renderNavButtons } from "./navigation.js";
+
 const PLACEHOLDER_PATTERN = /\[[^\[\]\r\n]+\]/g;
 
 function escapeXml(value) {
@@ -10,9 +12,19 @@ function escapeXml(value) {
   })[character]);
 }
 
-export function createSchoolhouseNode({ viewEl, subNavEl, previewEl, placeholderFieldsEl, downloadBtn }) {
+export function createSchoolhouseNode({
+  viewEl,
+  subNavEl,
+  badgeNavEl,
+  badgePromptEl,
+  badgeWorkspaceEl,
+  previewEl,
+  placeholderFieldsEl,
+  downloadBtn
+}) {
   let entries = [];
-  let activeIndex = 0;
+  let activeIndex = -1;
+  let badgesOpen = false;
 
   function getRenderedSvg(item) {
     const values = item.fieldValues ?? {};
@@ -67,14 +79,41 @@ export function createSchoolhouseNode({ viewEl, subNavEl, previewEl, placeholder
     if (!item) return;
 
     activeIndex = index;
-    for (const button of subNavEl.querySelectorAll("button")) {
-      const active = button.dataset.svgIndex === String(index);
-      button.classList.toggle("active", active);
-      button.setAttribute("aria-current", active ? "page" : "false");
-    }
-
+    badgePromptEl.hidden = true;
+    badgeWorkspaceEl.hidden = false;
     renderFields(item);
     renderPreview(item);
+  }
+
+  function renderBadgeNav() {
+    const badgeItems = entries.map((item, index) => ({
+      id: String(index),
+      label: item.label
+    }));
+
+    renderNavButtons(badgeNavEl, badgeItems, {
+      activeId: activeIndex >= 0 ? String(activeIndex) : undefined,
+      onSelect: (id) => selectEntry(Number(id))
+    });
+  }
+
+  function renderSectionNav() {
+    renderNavButtons(subNavEl, [{
+      id: "badges",
+      label: "BADGES",
+      controls: badgeNavEl.id,
+      expanded: badgesOpen
+    }], {
+      activeId: badgesOpen ? "badges" : undefined,
+      onSelect: (_id, _item, button) => {
+        badgesOpen = !badgesOpen;
+        button.classList.toggle("active", badgesOpen);
+        button.setAttribute("aria-current", badgesOpen ? "page" : "false");
+        button.setAttribute("aria-expanded", String(badgesOpen));
+        badgeNavEl.hidden = !badgesOpen;
+        if (badgesOpen) renderBadgeNav();
+      }
+    });
   }
 
   downloadBtn.addEventListener("click", () => {
@@ -96,30 +135,22 @@ export function createSchoolhouseNode({ viewEl, subNavEl, previewEl, placeholder
   return {
     setData(items) {
       entries = Array.isArray(items) ? items : [];
-      if (activeIndex >= entries.length) activeIndex = 0;
-    },
-    renderSubNav() {
-      const fragment = document.createDocumentFragment();
-
-      entries.forEach((item, index) => {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.textContent = item.label;
-        button.dataset.svgIndex = String(index);
-        button.classList.toggle("active", index === activeIndex);
-        button.setAttribute("aria-current", index === activeIndex ? "page" : "false");
-        button.addEventListener("click", () => selectEntry(index));
-        fragment.append(button);
-      });
-
-      subNavEl.replaceChildren(fragment);
+      if (activeIndex >= entries.length) activeIndex = -1;
     },
     show() {
       viewEl.hidden = entries.length === 0;
-      this.renderSubNav();
-      if (entries.length > 0) selectEntry(activeIndex);
+      badgeNavEl.hidden = !badgesOpen;
+      badgePromptEl.hidden = activeIndex >= 0;
+      badgeWorkspaceEl.hidden = activeIndex < 0;
+      renderSectionNav();
+      if (badgesOpen) renderBadgeNav();
+      if (activeIndex >= 0 && entries[activeIndex]) {
+        renderFields(entries[activeIndex]);
+        renderPreview(entries[activeIndex]);
+      }
     },
     hide() {
+      badgeNavEl.hidden = true;
       viewEl.hidden = true;
     }
   };

@@ -18,28 +18,12 @@
     <pattern id="grid5" width="45" height="45" patternUnits="userSpaceOnUse">
       <path d="M 45 0 L 0 0 0 45" fill="none" stroke="#00f2fe" stroke-width="0.5" opacity="0.08"/>
     </pattern>
-    <filter id="deepGlow5" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="6" result="blur1"/>
-      <feGaussianBlur stdDeviation="2" result="blur2"/>
-      <feMerge>
-        <feMergeNode in="blur1"/>
-        <feMergeNode in="blur2"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-    <filter id="subtleGlow5" x="-10%" y="-10%" width="120%" height="120%">
-      <feGaussianBlur stdDeviation="2" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
     <path id="textPath5" d="M 450, 450 m -330, 0 a 330,330 0 1,1 660,0 a 330,330 0 1,1 -660,0"/>
   </defs>
   <rect width="900" height="900" fill="url(#bgGrad5)"/>
   <rect width="900" height="900" fill="url(#grid5)"/>
   <rect width="900" height="900" fill="url(#scanlines5)"/>
-  <g filter="url(#subtleGlow5)">
+  <g>
     <circle cx="450" cy="450" r="405" fill="none" stroke="#00f2fe" stroke-width="0.75" opacity="0.2" stroke-dasharray="4 8"/>
     <circle cx="450" cy="450" r="395" fill="none" stroke="#00f2fe" stroke-width="1.5" opacity="0.4" stroke-dasharray="12 6 3 6"/>
     <circle cx="450" cy="450" r="375" fill="none" stroke="#00f2fe" stroke-width="1" opacity="0.3"/>
@@ -55,7 +39,7 @@
       <textPath href="#textPath5" dominant-baseline="central">NC-SERVER // NETWATCH-REG-02 // NODE-WATCHTOWER-7 // ENFORCED // NC-SERVER // NETWATCH-REG-02 // NODE-WATCHTOWER-7 // ENFORCED // NC-SERVER // NETWATCH-REG-02 // ENFORCED //</textPath>
     </text>
   </g>
-  <g transform="translate(450, 450)" opacity="0.25" stroke="#00f2fe" stroke-width="1.2" fill="none" filter="url(#subtleGlow5)">
+  <g transform="translate(450, 450)" opacity="0.25" stroke="#00f2fe" stroke-width="1.2" fill="none">
     <circle cx="0" cy="0" r="275" stroke-dasharray="5 3" stroke-width="1.5"/>
     <ellipse cx="0" cy="0" rx="275" ry="185"/>
     <ellipse cx="0" cy="0" rx="275" ry="90"/>
@@ -65,7 +49,7 @@
     <path d="M -190,-195 C -60,-275 -60,275 -190,195"/>
     <path d="M 190,-195 C 60,-275 60,275 190,195"/>
   </g>
-  <g transform="translate(450, 450)" filter="url(#deepGlow5)">
+  <g transform="translate(450, 450)">
     <path d="M 0,-200 L 160,-152 L 160,22 C 160,122 82,190 0,220 C -82,190 -160,122 -160,22 L -160,-152 Z" fill="url(#shieldInner5)" stroke="#00f2fe" stroke-width="4.5"/>
     <g transform="translate(0, 0)">
       <g transform="translate(0, -100)">
@@ -87,7 +71,7 @@
         <polygon points="170,21 160,21 170,11" fill="#00f2fe"/>
       </g>
       <g transform="translate(0, 68)">
-        <text x="0" y="10" font-size="13.5" font-weight="bold" fill="#7bf0ff" text-anchor="middle" letter-spacing="2" opacity="0.9" class="title-text">SECTION CHIEF</text>
+        <text x="0" y="10" font-size="13.5" font-weight="bold" fill="#7bf0ff" text-anchor="middle" letter-spacing="2" opacity="0.9" class="title-text">SPECIAL AGENT IN CHARGE</text>
         <text x="0" y="32" font-size="13.5" font-weight="bold" fill="#7bf0ff" text-anchor="middle" letter-spacing="2" opacity="0.9" class="title-text">NIGHT CITY FIELD OFFICE</text>
         <text x="0" y="54" font-size="13.5" font-weight="bold" fill="#7bf0ff" text-anchor="middle" letter-spacing="2" opacity="0.9" class="title-text">NETWATCH</text>
       </g>

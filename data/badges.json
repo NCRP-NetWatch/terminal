@@ -16,12 +16,12 @@
   },
   {
     "id": "supervisory-special-agent",
-    "label": "SUPERVISORY SPECIAL AGENT (SSA)",
+    "label": "SUPERVISORY SPECIAL AGENT",
     "file": "./data/svg/supervisory-special-agent.svg"
   },
   {
     "id": "section-chief",
-    "label": "SECTION CHIEF",
+    "label": "SPECIAL AGENT IN CHARGE",
     "file": "./data/svg/section-chief.svg"
   },
   {

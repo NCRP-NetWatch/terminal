@@ -1,4 +1,5 @@
 import { renderNavButtons } from "./navigation.js";
+import { getWorldDatePresentation } from "./dates.js";
 
 const collator = new Intl.Collator(undefined, { sensitivity: "base", numeric: true });
 
@@ -210,11 +211,9 @@ export function createWatchtowerNode({
       if (typeof note === "object" && note?.addedAt) {
         const time = document.createElement("time");
         time.className = "note-meta";
-        time.dateTime = note.addedAt;
-        const date = new Date(`${note.addedAt}T12:00:00Z`);
-        time.textContent = Number.isNaN(date.valueOf())
-          ? note.addedAt
-          : new Intl.DateTimeFormat(undefined, { dateStyle: "long", timeZone: "UTC" }).format(date);
+        const date = getWorldDatePresentation(note.addedAt);
+        time.dateTime = date?.iso ?? note.addedAt;
+        time.textContent = date?.label ?? note.addedAt;
         item.append(time);
       }
       fragment.append(item);

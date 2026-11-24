@@ -1,16 +1,5 @@
 import { renderNavButtons } from "./navigation.js";
-
-const PLACEHOLDER_PATTERN = /\[[^\[\]\r\n]+\]/g;
-
-function escapeXml(value) {
-  return value.replace(/[&<>"']/g, (character) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&apos;"
-  })[character]);
-}
+import { getBadgeFields, renderBadgeSvg } from "./badges.js";
 
 export function createSchoolhouseNode({
   viewEl,
@@ -27,11 +16,7 @@ export function createSchoolhouseNode({
   let badgesOpen = false;
 
   function getRenderedSvg(item) {
-    const values = item.fieldValues ?? {};
-    return item.svgText.replace(PLACEHOLDER_PATTERN, (token) => {
-      const value = values[token];
-      return value ? escapeXml(value) : token;
-    });
+    return renderBadgeSvg(item.svgText, item.fieldValues);
   }
 
   function renderPreview(item) {
@@ -39,7 +24,7 @@ export function createSchoolhouseNode({
   }
 
   function renderFields(item) {
-    const tokens = [...new Set(item.svgText.match(PLACEHOLDER_PATTERN) ?? [])];
+    const tokens = getBadgeFields(item.svgText);
     const fragment = document.createDocumentFragment();
 
     if (!tokens.length) {

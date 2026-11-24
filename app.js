@@ -1,6 +1,7 @@
 import { createWatchtowerNode } from "./nodes/watchtower.js";
 import { createLibraryNode } from "./nodes/library.js";
 import { createSchoolhouseNode } from "./nodes/schoolhouse.js";
+import { getBadgeIdForRank, loadBadge, loadBadgeEntries, normalizeRank, renderBadgeSvg } from "./nodes/badges.js";
 import { renderNavButtons } from "./nodes/navigation.js";
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "./supabase-config.js";
 
@@ -20,14 +21,10 @@ const ACCESS_RANKS = new Set([
   "probationary agent"
 ]);
 
-const RANK_ALIASES = new Map([
-  ["special agent in charge (sic)", "special agent in charge"],
-  ["supervisory special agent (ssa)", "supervisory special agent"]
-]);
-
 const RANK_LABELS = new Map([
-  ["special agent in charge", "SPECIAL AGENT IN CHARGE (SIC)"],
-  ["supervisory special agent", "SUPERVISORY SPECIAL AGENT (SSA)"]
+  ["ncrp staff", "NCRP Staff"],
+  ["special agent in charge", "Special Agent in Charge"],
+  ["supervisory special agent", "Supervisory Special Agent"]
 ]);
 
 const authGateEl = document.getElementById("authGate");
@@ -40,11 +37,10 @@ const saveAgentNameBtn = document.getElementById("saveAgentName");
 const terminalAppEl = document.getElementById("terminalApp");
 const homeViewEl = document.getElementById("homeView");
 const homeTitleEl = document.getElementById("homeTitle");
+const homeBadgeEl = document.getElementById("homeBadge");
 const homeNodeGridEl = document.getElementById("homeNodeGrid");
 const nodeNavEl = document.getElementById("nodeNav");
 const subNavEl = document.getElementById("subNav");
-const agentIdentityEl = document.getElementById("agentIdentity");
-const agentRankEl = document.getElementById("agentRank");
 const signOutBtn = document.getElementById("signOutBtn");
 const libraryContentEl = document.getElementById("libraryContent");
 
@@ -98,6 +94,7 @@ let activeUserId;
 let activeNodeId = "home";
 let sessionRequestId = 0;
 let nodeRenderRequestId = 0;
+let homeBadgeRequestId = 0;
 let sessionGeneration = 0;
 
 function isConfigured() {
@@ -121,6 +118,7 @@ function showAuthGate(message, { allowSignIn = false, allowSignOut = false, allo
 function clearTerminalData() {
   sessionGeneration += 1;
   nodeRenderRequestId += 1;
+  homeBadgeRequestId += 1;
   currentProfile = undefined;
   loadedNodes.clear();
   homeViewEl.hidden = true;
@@ -129,13 +127,6 @@ function clearTerminalData() {
   schoolhouse.setData([]);
   nodeNavEl.replaceChildren();
   subNavEl.replaceChildren();
-  agentIdentityEl.textContent = "";
-  agentRankEl.textContent = "";
-}
-
-function normalizeRank(rank) {
-  const normalized = String(rank ?? "").trim().toLowerCase().replace(/[_\s]+/g, " ");
-  return RANK_ALIASES.get(normalized) ?? normalized;
 }
 
 function getAllowedNodes(profile) {
@@ -155,7 +146,10 @@ function showHome() {
   if (!currentProfile) return;
   nodeRenderRequestId += 1;
   activeNodeId = "home";
-  homeTitleEl.textContent = `Welcome, ${currentProfile.agent_name?.trim() || "Agent"}`;
+  const rank = formatRank(currentProfile.rank);
+  const name = currentProfile.agent_name?.trim() || "Agent";
+  homeTitleEl.textContent = `Welcome, ${rank} ${name}`;
+  void renderHomeBadge(currentProfile);
   homeNodeGridEl.replaceChildren(...getAllowedNodes(currentProfile).map((node) => {
     const card = document.createElement("button");
     card.type = "button";
@@ -179,10 +173,22 @@ function showHome() {
   renderNodeNav(currentProfile, "home");
 }
 
-async function fetchPublicJson(url) {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`Could not load ${url} (${response.status})`);
-  return response.json();
+async function renderHomeBadge(profile) {
+  const requestId = ++homeBadgeRequestId;
+  const badgeId = getBadgeIdForRank(profile.rank);
+  homeBadgeEl.hidden = true;
+  homeBadgeEl.replaceChildren();
+  if (!badgeId) return;
+
+  try {
+    const badge = await loadBadge(badgeId);
+    if (requestId !== homeBadgeRequestId || currentProfile !== profile || activeNodeId !== "home") return;
+    homeBadgeEl.innerHTML = renderBadgeSvg(badge.svgText, { "[AGENT NAME]": profile.agent_name?.trim() });
+    homeBadgeEl.setAttribute("aria-label", `${formatRank(profile.rank)} badge for ${profile.agent_name?.trim()}`);
+    homeBadgeEl.hidden = false;
+  } catch (error) {
+    console.error("Could not load the home badge", error);
+  }
 }
 
 async function loadNodeData(nodeId, generation = sessionGeneration) {
@@ -213,14 +219,7 @@ async function loadNodeData(nodeId, generation = sessionGeneration) {
   }
 
   if (nodeId === "schoolhouse") {
-    const manifest = await fetchPublicJson("./data/badges.json");
-    const badgeEntries = await Promise.all(
-      manifest.map(async (item) => {
-        const response = await fetch(item.file);
-        if (!response.ok) throw new Error(`Could not load ${item.file} (${response.status})`);
-        return { ...item, svgText: await response.text() };
-      })
-    );
+    const badgeEntries = await loadBadgeEntries();
     if (generation !== sessionGeneration) return;
     schoolhouse.setData(badgeEntries);
     loadedNodes.add(nodeId);
@@ -271,6 +270,7 @@ async function renderNode(nodeId) {
   if (!currentProfile || !getAllowedNodes(currentProfile).some((node) => node.id === nodeId)) return;
 
   const requestId = ++nodeRenderRequestId;
+  homeBadgeRequestId += 1;
   activeNodeId = nodeId;
   homeViewEl.hidden = true;
   for (const btn of nodeNavEl.querySelectorAll("button[data-nav-id]")) {
@@ -299,7 +299,8 @@ async function renderNode(nodeId) {
 
 function formatRank(rank) {
   const normalized = normalizeRank(rank);
-  return RANK_LABELS.get(normalized) ?? normalized.toUpperCase();
+  return RANK_LABELS.get(normalized)
+    ?? normalized.replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
 async function activateSession(session) {
@@ -321,7 +322,7 @@ async function activateSession(session) {
 
   const { data: profile, error } = await supabaseClient
     .from("profiles")
-    .select("user_id, agent_name, rank, assigned_node")
+    .select("user_id, agent_name, rank")
     .eq("user_id", session.user.id)
     .maybeSingle();
 
@@ -368,8 +369,6 @@ async function activateSession(session) {
   }
 
   currentProfile = profile;
-  agentIdentityEl.textContent = profile.agent_name?.trim() || "AGENT NAME UNASSIGNED";
-  agentRankEl.textContent = formatRank(profile.rank);
   authGateEl.hidden = true;
   terminalAppEl.hidden = false;
 

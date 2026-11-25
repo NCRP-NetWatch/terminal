@@ -70,7 +70,7 @@
         <polygon points="170,21 160,21 170,11" fill="#00f2fe"/>
       </g>
       <g transform="translate(0, 68)">
-        <text x="0" y="10" font-size="13.5" font-weight="bold" fill="#7bf0ff" text-anchor="middle" letter-spacing="2" opacity="0.9" class="title-text">SUPERVISORY SPECIAL AGENT</text>
+        <text x="0" y="10" font-size="13.5" font-weight="bold" fill="#7bf0ff" text-anchor="middle" letter-spacing="2" opacity="0.9" class="title-text">SUPERVISOR</text>
         <text x="0" y="32" font-size="13.5" font-weight="bold" fill="#7bf0ff" text-anchor="middle" letter-spacing="2" opacity="0.9" class="title-text">NIGHT CITY FIELD OFFICE</text>
         <text x="0" y="54" font-size="13.5" font-weight="bold" fill="#7bf0ff" text-anchor="middle" letter-spacing="2" opacity="0.9" class="title-text">NETWATCH</text>
       </g>

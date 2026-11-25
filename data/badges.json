@@ -15,13 +15,13 @@
     "file": "./data/svg/senior-agent.svg"
   },
   {
-    "id": "supervisory-special-agent",
-    "label": "SUPERVISORY SPECIAL AGENT",
-    "file": "./data/svg/supervisory-special-agent.svg"
+    "id": "supervisor",
+    "label": "SUPERVISOR",
+    "file": "./data/svg/supervisor.svg"
   },
   {
     "id": "section-chief",
-    "label": "SPECIAL AGENT IN CHARGE",
+    "label": "SECTION CHIEF",
     "file": "./data/svg/section-chief.svg"
   },
   {

@@ -12,19 +12,19 @@ const NODES = [
 ];
 
 const ACCESS_RANKS = new Set([
-  "ncrp staff",
-  "special agent in charge",
-  "supervisory special agent",
-  "special agent",
+  "section chief",
+  "supervisor",
   "senior agent",
   "agent",
   "probationary agent"
 ]);
 
 const RANK_LABELS = new Map([
-  ["ncrp staff", "NCRP Staff"],
-  ["special agent in charge", "Special Agent in Charge"],
-  ["supervisory special agent", "Supervisory Special Agent"]
+  ["section chief", "Section Chief"],
+  ["supervisor", "Supervisor"],
+  ["senior agent", "Senior Agent"],
+  ["agent", "Agent"],
+  ["probationary agent", "Probationary Agent"]
 ]);
 
 const authGateEl = document.getElementById("authGate");

@@ -1,16 +1,9 @@
-const RANK_ALIASES = new Map([
-  ["sic", "special agent in charge"],
-  ["ssa", "supervisory special agent"],
-  ["special agent in charge (sic)", "special agent in charge"],
-  ["supervisory special agent (ssa)", "supervisory special agent"]
-]);
-
 const RANK_BADGES = new Map([
   ["probationary agent", "probationary-agent"],
   ["agent", "agent"],
   ["senior agent", "senior-agent"],
-  ["supervisory special agent", "supervisory-special-agent"],
-  ["special agent in charge", "section-chief"]
+  ["supervisor", "supervisor"],
+  ["section chief", "section-chief"]
 ]);
 
 const PLACEHOLDER_PATTERN = /\[[^\[\]\r\n]+\]/g;
@@ -18,8 +11,7 @@ const BADGE_FILES = new Map();
 let manifestPromise;
 
 export function normalizeRank(rank) {
-  const normalized = String(rank ?? "").trim().toLowerCase().replace(/[_\s]+/g, " ");
-  return RANK_ALIASES.get(normalized) ?? normalized;
+  return String(rank ?? "").trim().toLowerCase().replace(/[_\s]+/g, " ");
 }
 
 export function getBadgeIdForRank(rank) {

@@ -1,5 +1,5 @@
 import { renderNavButtons } from "./navigation.js";
-import { getBadgeFields, renderBadgeSvg } from "./badges.js";
+import { getBadgeFields, namespaceBadgeSvgIds, renderBadgeSvg } from "./badges.js";
 
 export function createSchoolhouseNode({
   viewEl,
@@ -16,7 +16,7 @@ export function createSchoolhouseNode({
   let badgesOpen = false;
 
   function getRenderedSvg(item) {
-    return renderBadgeSvg(item.svgText, item.fieldValues);
+    return namespaceBadgeSvgIds(renderBadgeSvg(item.svgText, item.fieldValues));
   }
 
   function renderPreview(item) {
@@ -110,7 +110,7 @@ export function createSchoolhouseNode({
     }));
     const link = document.createElement("a");
     link.href = url;
-    link.download = item.file.split("/").pop() || `${item.id}.svg`;
+    link.download = item.downloadName || item.file.split("/").pop() || `${item.id}.svg`;
     document.body.append(link);
     link.click();
     link.remove();

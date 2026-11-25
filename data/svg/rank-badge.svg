@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 900" width="100%" height="100%">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&amp;family=Rajdhani:wght@400;500;600;700&amp;display=swap');
+      .orbit { font-family: 'Orbitron', sans-serif; }
+      .body { font-family: 'Rajdhani', sans-serif; }
+      .micro { font-family: 'Orbitron', sans-serif; font-weight: 600; letter-spacing: 2px; }
+    </style>
+    <linearGradient id="credentialGlass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#03131e" />
+      <stop offset="1" stop-color="#01070d" />
+    </linearGradient>
+    <filter id="badgeEdgeGlow" x="-15%" y="-15%" width="130%" height="130%">
+      <feGaussianBlur stdDeviation="1.7" result="blur" />
+      <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+    </filter>
+    <clipPath id="gatewayFrameClip">
+      <rect x="36" y="36" width="828" height="828" />
+    </clipPath>
+    <clipPath id="credentialShieldClip">
+      <path d="M 216,220 H 684 V 546 C 684,590 594,635 450,660 C 306,635 216,590 216,546 Z" />
+    </clipPath>
+  </defs>
+
+  <!-- The Gateway supplies the wall, skyline, floor, and perimeter corners. -->
+  <g clip-path="url(#gatewayFrameClip)">
+    <use href="GATEWAY_BACKGROUND_URL#blackwall-backdrop" />
+    <use href="GATEWAY_BACKGROUND_URL#night-city-horizon" />
+    <use href="GATEWAY_BACKGROUND_URL#cyberspace-floor" />
+  </g>
+
+  <path d="M 204,208 H 696 V 548 C 696,596 600,647 450,674 C 300,647 204,596 204,548 Z"
+    fill="url(#credentialGlass)" stroke="#00f2fe" stroke-width="2.2" />
+  <path d="M 216,220 H 684 V 546 C 684,590 594,635 450,660 C 306,635 216,590 216,546 Z"
+    fill="none" stroke="#7bf0ff" stroke-width="0.85" opacity="0.42" />
+  <path d="M 204,326 V 208 H 322 M 578,208 H 696 V 326"
+    fill="none" stroke="#00f2fe" stroke-width="3" filter="url(#badgeEdgeGlow)" />
+
+  <g clip-path="url(#credentialShieldClip)">
+    <text x="450" y="244" text-anchor="middle" class="micro" font-size="10" fill="#ff8fa3" letter-spacing="2.4">NODE-02-LIBRARY</text>
+    <text x="450" y="273" text-anchor="middle" class="micro" font-size="10" fill="#7bf0ff" letter-spacing="2.2">NETWATCH // NIGHT CITY FIELD OFFICE</text>
+    <text x="450" y="301" text-anchor="middle" class="orbit" font-size="16" font-weight="700" fill="#00f2fe" letter-spacing="3">PERSONNEL CREDENTIAL</text>
+    <path d="M 274,316 H 626" fill="none" stroke="#00f2fe" stroke-width="1" opacity="0.55" />
+
+    <!-- One shield silhouette carries the translucent NetWatch wireframe globe. -->
+    <g fill="none" stroke="#RANK_ACCENT#" stroke-width="1.5" opacity="0.3">
+      <circle cx="450" cy="386" r="54" />
+      <ellipse cx="450" cy="386" rx="25" ry="54" />
+      <ellipse cx="450" cy="386" rx="41" ry="54" />
+      <path d="M 400,369 C 427,376 473,376 500,369 M 396,386 H 504 M 400,403 C 427,396 473,396 500,403" />
+      <path d="M 411,347 C 432,353 468,353 489,347 M 411,425 C 432,419 468,419 489,425" opacity="0.72" />
+    </g>
+    <g id="rankIconSlot"></g>
+
+    <text x="450" y="478" text-anchor="middle" class="orbit" font-size="23" font-weight="800" fill="#RANK_HIGHLIGHT#" letter-spacing="3" filter="url(#badgeEdgeGlow)">[RANK NAME]</text>
+    <text x="450" y="505" text-anchor="middle" class="micro" font-size="9" fill="#ff8fa3" opacity="0.85">RANK CLASS // <tspan fill="#RANK_ACCENT#">NCFO // GATE-01</tspan></text>
+    <path d="M 292,528 H 608" fill="none" stroke="#RANK_ACCENT#" stroke-width="1" opacity="0.48" />
+    <text x="450" y="556" text-anchor="middle" class="body" font-size="14" font-weight="700" fill="#7bf0ff" letter-spacing="3">AGENT IDENTITY</text>
+    <text x="450" y="590" text-anchor="middle" class="orbit" font-size="18" font-weight="700" fill="#ffffff" letter-spacing="2">[AGENT NAME]</text>
+  </g>
+
+  <use href="GATEWAY_BACKGROUND_URL#icon-border-corners" />
+</svg>

@@ -357,38 +357,38 @@
         <line x1="450" y1="550" x2="-90" y2="864" />
         <line x1="450" y1="550" x2="990" y2="864" />
       </g>
+    </g>
 
-      <!-- Expanded Isometric Floor Deck & Grounding Rim -->
-      <g id="tower-expanded-floor">
-        <polygon points="314,616 450,684 586,616 450,548" fill="#01070d" fill-opacity="0.78" stroke="#00f2fe" stroke-width="1.4" opacity="0.65" />
-        <polygon points="314,606 450,674 586,606 450,538" fill="#03131e" fill-opacity="0.82" stroke="#7bf0ff" stroke-width="1.5" opacity="0.72" />
-        <line x1="314" y1="606" x2="314" y2="616" stroke="#00f2fe" stroke-width="1.4" opacity="0.65" />
-        <line x1="450" y1="674" x2="450" y2="684" stroke="#7bf0ff" stroke-width="1.5" opacity="0.72" />
-        <line x1="586" y1="606" x2="586" y2="616" stroke="#00f2fe" stroke-width="1.4" opacity="0.65" />
-        <line x1="382" y1="572" x2="518" y2="640" stroke="#00f2fe" stroke-width="0.9" opacity="0.26" />
-        <line x1="518" y1="572" x2="382" y2="640" stroke="#00f2fe" stroke-width="0.9" opacity="0.26" />
-      </g>
+    <!-- Expanded Isometric Floor Deck & Grounding Rim -->
+    <g id="tower-expanded-floor">
+      <polygon points="314,616 450,684 586,616 450,548" fill="#01070d" fill-opacity="0.78" stroke="#00f2fe" stroke-width="1.4" opacity="0.65" />
+      <polygon points="314,606 450,674 586,606 450,538" fill="#03131e" fill-opacity="0.82" stroke="#7bf0ff" stroke-width="1.5" opacity="0.72" />
+      <line x1="314" y1="606" x2="314" y2="616" stroke="#00f2fe" stroke-width="1.4" opacity="0.65" />
+      <line x1="450" y1="674" x2="450" y2="684" stroke="#7bf0ff" stroke-width="1.5" opacity="0.72" />
+      <line x1="586" y1="606" x2="586" y2="616" stroke="#00f2fe" stroke-width="1.4" opacity="0.65" />
+      <line x1="382" y1="572" x2="518" y2="640" stroke="#00f2fe" stroke-width="0.9" opacity="0.26" />
+      <line x1="518" y1="572" x2="382" y2="640" stroke="#00f2fe" stroke-width="0.9" opacity="0.26" />
+    </g>
 
-      <!-- Conduits & Floor Anchor Dots -->
-      <g id="conduit-channels">
-        <use href="#conduit-1" class="mf-conduit-line" />
-        <use href="#anchor-dot" x="334" y="616" />
+    <!-- Conduits & Floor Anchor Dots -->
+    <g id="conduit-channels">
+      <use href="#conduit-1" class="mf-conduit-line" />
+      <use href="#anchor-dot" x="334" y="616" />
 
-        <use href="#conduit-2" class="mf-conduit-line" />
-        <use href="#anchor-dot" x="354" y="626" />
+      <use href="#conduit-2" class="mf-conduit-line" />
+      <use href="#anchor-dot" x="354" y="626" />
 
-        <use href="#conduit-3" class="mf-conduit-line" />
-        <use href="#anchor-dot" x="374" y="636" />
+      <use href="#conduit-3" class="mf-conduit-line" />
+      <use href="#anchor-dot" x="374" y="636" />
 
-        <use href="#conduit-4" class="mf-conduit-line" />
-        <use href="#anchor-dot" x="566" y="616" />
+      <use href="#conduit-4" class="mf-conduit-line" />
+      <use href="#anchor-dot" x="566" y="616" />
 
-        <use href="#conduit-5" class="mf-conduit-line" />
-        <use href="#anchor-dot" x="546" y="626" />
+      <use href="#conduit-5" class="mf-conduit-line" />
+      <use href="#anchor-dot" x="546" y="626" />
 
-        <use href="#conduit-6" class="mf-conduit-line" />
-        <use href="#anchor-dot" x="526" y="636" />
-      </g>
+      <use href="#conduit-6" class="mf-conduit-line" />
+      <use href="#anchor-dot" x="526" y="636" />
     </g>
 
     <g id="watchtower-monolith" filter="url(#towerGlow)">
@@ -469,7 +469,7 @@
     </g>
 
     <g id="mainframe-subnodes">
-      <g transform="translate(56, 742)">
+      <g transform="translate(56, 726)">
         <rect width="224" height="22" class="mf-node-box" />
         <text x="6" y="-2.5" class="mf-box-border-code">0x4E54 // 7K39 // 0x9F2A // 0x1B8D</text>
         <text x="6" y="29" class="mf-box-border-code">6C4E // 4A0F // 0x7E19 // 8B3C</text>
@@ -477,7 +477,7 @@
         <text x="22" y="15.5" class="mf-node">NODE-01-WATCHTOWER</text>
       </g>
 
-      <g transform="translate(56, 774)">
+      <g transform="translate(56, 770)">
         <rect width="184" height="22" class="mf-node-box" />
         <text x="6" y="-2.5" class="mf-box-border-code">7G9P // 0xA8E3 // 2MR4 // 0x3D10</text>
         <text x="6" y="29" class="mf-box-border-code">5F1C // 9Q2W // 8XL6 // 0x6F44</text>
@@ -485,7 +485,7 @@
         <text x="22" y="15.5" class="mf-node">NODE-02-LIBRARY</text>
       </g>
 
-      <g transform="translate(56, 806)">
+      <g transform="translate(56, 814)">
         <rect width="236" height="22" class="mf-node-box" />
         <text x="6" y="-2.5" class="mf-box-border-code">0x3D7B // 4VN8 // 9E4A // 0x8C51 // 2A9E</text>
         <text x="6" y="29" class="mf-box-border-code">1KP5 // 0x6C2F // 3R7T // 0x5B09 // 7D4M</text>
@@ -493,7 +493,7 @@
         <text x="22" y="15.5" class="mf-node">NODE-03-SCHOOLHOUSE</text>
       </g>
 
-      <g transform="translate(620, 742)">
+      <g transform="translate(620, 726)">
         <rect width="224" height="22" class="mf-node-box" />
         <text x="218" y="-2.5" text-anchor="end" class="mf-box-border-code">0x9A12 // 0xFF01 // NULL // 0x0000</text>
         <text x="218" y="29" text-anchor="end" class="mf-box-border-code">0x4E88 // HALT // 0x8B20 // DORMANT</text>
@@ -501,7 +501,7 @@
         <text x="202" y="15.5" text-anchor="end" class="mf-node">NODE-04-OFFLINE</text>
       </g>
 
-      <g transform="translate(660, 774)">
+      <g transform="translate(660, 770)">
         <rect width="184" height="22" class="mf-node-box" />
         <text x="178" y="-2.5" text-anchor="end" class="mf-box-border-code">0x3F61 // 0xC419 // DROP // 0x0000</text>
         <text x="178" y="29" text-anchor="end" class="mf-box-border-code">0x7A05 // IDLE // 0x2E7A // STALE</text>
@@ -509,7 +509,7 @@
         <text x="162" y="15.5" text-anchor="end" class="mf-node">NODE-05-OFFLINE</text>
       </g>
 
-      <g transform="translate(608, 806)">
+      <g transform="translate(608, 814)">
         <rect width="236" height="22" class="mf-node-box" />
         <text x="230" y="-2.5" text-anchor="end" class="mf-box-border-code">0x1D6B // 0xB04C // 0x5D92 // LOCK // 0x0000</text>
         <text x="230" y="29" text-anchor="end" class="mf-box-border-code">0x8E27 // 0x9C33 // OFFLINE // 0x71E4 // UNLINK</text>

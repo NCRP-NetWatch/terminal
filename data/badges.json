@@ -1,28 +1,38 @@
 [
   {
-    "id": "probationary-agent",
-    "label": "PROBATIONARY AGENT",
-    "file": "./data/svg/probationary-agent.svg"
-  },
-  {
-    "id": "agent",
-    "label": "AGENT",
-    "file": "./data/svg/agent.svg"
-  },
-  {
-    "id": "senior-agent",
-    "label": "SENIOR AGENT",
-    "file": "./data/svg/senior-agent.svg"
+    "id": "section-chief",
+    "label": "SECTION CHIEF",
+    "file": "./data/svg/rank-badge.svg?v=6",
+    "iconId": "section-chief",
+    "downloadName": "section-chief.svg"
   },
   {
     "id": "supervisor",
     "label": "SUPERVISOR",
-    "file": "./data/svg/supervisor.svg"
+    "file": "./data/svg/rank-badge.svg?v=6",
+    "iconId": "supervisor",
+    "downloadName": "supervisor.svg"
   },
   {
-    "id": "section-chief",
-    "label": "SECTION CHIEF",
-    "file": "./data/svg/section-chief.svg"
+    "id": "senior-agent",
+    "label": "SENIOR AGENT",
+    "file": "./data/svg/rank-badge.svg?v=6",
+    "iconId": "senior-agent",
+    "downloadName": "senior-agent.svg"
+  },
+  {
+    "id": "agent",
+    "label": "AGENT",
+    "file": "./data/svg/rank-badge.svg?v=6",
+    "iconId": "agent",
+    "downloadName": "agent.svg"
+  },
+  {
+    "id": "probationary-agent",
+    "label": "PROBATIONARY AGENT",
+    "file": "./data/svg/rank-badge.svg?v=6",
+    "iconId": "probationary-agent",
+    "downloadName": "probationary-agent.svg"
   },
   {
     "id": "gateway-icon",

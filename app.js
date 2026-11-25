@@ -1,7 +1,8 @@
 import { createWatchtowerNode } from "./nodes/watchtower.js";
 import { createLibraryNode } from "./nodes/library.js";
 import { createSchoolhouseNode } from "./nodes/schoolhouse.js";
-import { getBadgeIdForRank, loadBadge, loadBadgeEntries, normalizeRank, renderBadgeSvg } from "./nodes/badges.js";
+import { loadBadge, loadBadgeEntries, namespaceBadgeSvgIds, renderBadgeSvg } from "./nodes/badges.js";
+import { formatRank, getBadgeIdForRank, isAuthorizedRank } from "./nodes/ranks.js";
 import { renderNavButtons } from "./nodes/navigation.js";
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "./supabase-config.js";
 
@@ -10,22 +11,6 @@ const NODES = [
   { id: "library", label: "NODE-02-LIBRARY", title: "Library", description: "Clerical/Logistics node; manages the budget and armory, contains the SOP, standing orders & other documents." },
   { id: "schoolhouse", label: "NODE-03-SCHOOLHOUSE", title: "Schoolhouse", description: "Training node; stores training material." }
 ];
-
-const ACCESS_RANKS = new Set([
-  "section chief",
-  "supervisor",
-  "senior agent",
-  "agent",
-  "probationary agent"
-]);
-
-const RANK_LABELS = new Map([
-  ["section chief", "Section Chief"],
-  ["supervisor", "Supervisor"],
-  ["senior agent", "Senior Agent"],
-  ["agent", "Agent"],
-  ["probationary agent", "Probationary Agent"]
-]);
 
 const authGateEl = document.getElementById("authGate");
 const authMessageEl = document.getElementById("authMessage");
@@ -130,7 +115,7 @@ function clearTerminalData() {
 }
 
 function getAllowedNodes(profile) {
-  return ACCESS_RANKS.has(normalizeRank(profile.rank)) ? NODES : [];
+  return isAuthorizedRank(profile.rank) ? NODES : [];
 }
 
 function renderNodeNav(profile, activeId = activeNodeId) {
@@ -148,9 +133,10 @@ function showHome() {
   activeNodeId = "home";
   const rank = formatRank(currentProfile.rank);
   const name = currentProfile.agent_name?.trim() || "Agent";
+  const accessibleNodes = getAllowedNodes(currentProfile);
   homeTitleEl.textContent = `Welcome, ${rank} ${name}`;
   void renderHomeBadge(currentProfile);
-  homeNodeGridEl.replaceChildren(...getAllowedNodes(currentProfile).map((node) => {
+  homeNodeGridEl.replaceChildren(...accessibleNodes.map((node) => {
     const card = document.createElement("button");
     card.type = "button";
     card.className = "home-node-card";
@@ -183,7 +169,9 @@ async function renderHomeBadge(profile) {
   try {
     const badge = await loadBadge(badgeId);
     if (requestId !== homeBadgeRequestId || currentProfile !== profile || activeNodeId !== "home") return;
-    homeBadgeEl.innerHTML = renderBadgeSvg(badge.svgText, { "[AGENT NAME]": profile.agent_name?.trim() });
+    homeBadgeEl.innerHTML = namespaceBadgeSvgIds(
+      renderBadgeSvg(badge.svgText, { "[AGENT NAME]": profile.agent_name?.trim() })
+    );
     homeBadgeEl.setAttribute("aria-label", `${formatRank(profile.rank)} badge for ${profile.agent_name?.trim()}`);
     homeBadgeEl.hidden = false;
   } catch (error) {
@@ -295,12 +283,6 @@ async function renderNode(nodeId) {
     console.error(error);
     showNodeError(nodeId, error);
   }
-}
-
-function formatRank(rank) {
-  const normalized = normalizeRank(rank);
-  return RANK_LABELS.get(normalized)
-    ?? normalized.replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
 async function activateSession(session) {

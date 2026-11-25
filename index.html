@@ -13,12 +13,12 @@
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
-  <main id="authGate" class="auth-gate" aria-live="polite">
+  <main id="authGate" class="auth-gate">
     <section class="auth-panel" aria-labelledby="authTitle">
       <img class="auth-logo" src="./assets/netwatch-logo.png" alt="NetWatch" />
       <p class="auth-kicker">NCRP // SECURE ACCESS</p>
       <h1 id="authTitle">NETWATCH TERMINAL</h1>
-      <p id="authMessage" class="auth-message">Authenticate with Discord to access the NetWatch Terminal.</p>
+      <p id="authMessage" class="auth-message" role="status">Authenticate with Discord to access the NetWatch Terminal.</p>
       <form id="agentNameForm" class="agent-name-form" hidden>
         <label for="agentNameInput">Agent Name</label>
         <input
@@ -37,9 +37,9 @@
     </section>
   </main>
 
-  <div id="terminalApp" hidden>
+  <main id="terminalApp" hidden>
     <header class="terminal-header">
-      <div class="terminal-brand" aria-label="NetWatch Gateway">
+      <div class="terminal-brand">
         <img class="terminal-logo" src="./assets/netwatch-logo.png" alt="NetWatch" />
         <img class="terminal-logo" src="./assets/gateway-logo.png" alt="Gateway" />
       </div>
@@ -49,7 +49,7 @@
       <nav id="schoolhouseBadgeNav" class="badge-nav" aria-label="Badges" hidden></nav>
     </header>
 
-  <section id="homeView" class="home-view" hidden aria-labelledby="homeTitle">
+    <section id="homeView" class="home-view" hidden aria-labelledby="homeTitle">
     <div class="home-overview">
       <div class="home-welcome">
         <p class="home-kicker">NCRP // NETWATCH OPERATIONS</p>
@@ -132,7 +132,7 @@
           placeholder="Search name, affiliation, traces, or status..."
         />
         <label class="db-sort-label" for="dbSort">Sort by</label>
-        <select id="dbSort" class="db-sort" aria-label="Sort Watchtower entries">
+        <select id="dbSort" class="db-sort" aria-label="Sort by Watchtower entries">
           <option value="name-asc">Name (A–Z)</option>
           <option value="name-desc">Name (Z–A)</option>
           <option value="affiliation-asc">Affiliation (A–Z)</option>
@@ -143,7 +143,7 @@
           <option value="traces-asc">Traces (fewest first)</option>
         </select>
       </div>
-      <table>
+      <table aria-label="Watchtower trace database">
         <thead>
           <tr>
             <th scope="col">Name</th>
@@ -176,7 +176,6 @@
       </section>
     </div>
   </section>
-
   <dialog id="notesDialog" class="notes-dialog" aria-labelledby="notesTitle">
     <div class="notes-panel">
       <div class="notes-heading">
@@ -190,7 +189,7 @@
       <ol id="notesList" class="notes-list"></ol>
     </div>
   </dialog>
-  </div>
+  </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script type="module" src="./app.js"></script>

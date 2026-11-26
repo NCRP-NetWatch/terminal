@@ -1,3 +1,5 @@
+import { renderNavButtons } from "./navigation.js";
+
 function appendInlineMarkdown(parent, value) {
   const tokenPattern = /(`[^`]+`|\*\*.+?\*\*|\*[^*]+\*)/g;
   let lastIndex = 0;
@@ -141,9 +143,31 @@ function renderMarkdown(markdown) {
   return output;
 }
 
-export function createLibraryNode({ viewEl, contentEl, subNavEl }) {
+export function createLibraryNode({ viewEl, contentEl, subNavEl, badgeNavEl, badges }) {
   let documents = [];
   let activeDownloadUrl;
+  let activeSection = "documents";
+
+  function renderSectionNav() {
+    renderNavButtons(subNavEl, [
+      { id: "badges", label: "BADGES" },
+      { id: "documents", label: "DOCUMENTS" }
+    ], {
+      activeId: activeSection,
+      onSelect: (sectionId) => {
+        activeSection = sectionId;
+        renderSectionNav();
+        if (sectionId === "badges") {
+          contentEl.hidden = true;
+          badges.show();
+          return;
+        }
+        badges.hide();
+        contentEl.hidden = false;
+        showCatalog();
+      }
+    });
+  }
 
   function clearDownloadUrl() {
     if (!activeDownloadUrl) return;
@@ -240,11 +264,20 @@ export function createLibraryNode({ viewEl, contentEl, subNavEl }) {
     },
     show() {
       viewEl.hidden = false;
-      subNavEl.replaceChildren();
-      showCatalog();
+      renderSectionNav();
+      if (activeSection === "badges") {
+        contentEl.hidden = true;
+        badges.show();
+      } else {
+        badges.hide();
+        contentEl.hidden = false;
+        showCatalog();
+      }
     },
     hide() {
       clearDownloadUrl();
+      badgeNavEl.hidden = true;
+      badges.hide();
       viewEl.hidden = true;
     }
   };

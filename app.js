@@ -1,6 +1,7 @@
 import { createWatchtowerNode } from "./nodes/watchtower.js";
 import { createLibraryNode } from "./nodes/library.js";
 import { createSchoolhouseNode } from "./nodes/schoolhouse.js";
+import { createBadgeSection } from "./nodes/badge-section.js";
 import { createCommandNode } from "./nodes/command.js";
 import { loadBadge, loadBadgeEntries, namespaceBadgeSvgIds, renderBadgeSvg } from "./nodes/badges.js";
 import { formatRank, getBadgeIdForRank, isAuthorizedRank } from "./nodes/ranks.js";
@@ -8,10 +9,10 @@ import { renderNavButtons } from "./nodes/navigation.js";
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "./supabase-config.js";
 
 const NODES = [
+  { id: "command", label: "NODE-0X-COMMAND", title: "Command", description: "Personnel access and rank management." },
   { id: "watchtower", label: "NODE-01-WATCHTOWER", title: "Watchtower", description: "Trace node; stores traces and cases" },
-  { id: "library", label: "NODE-02-LIBRARY", title: "Library", description: "Clerical/Logistics node; manages the budget and armory, contains the SOP, standing orders & other documents." },
-  { id: "schoolhouse", label: "NODE-03-SCHOOLHOUSE", title: "Schoolhouse", description: "Training node; stores training material." },
-  { id: "command", label: "NODE-0X-COMMAND", title: "Command", description: "Personnel access and rank management." }
+  { id: "library", label: "NODE-02-LIBRARY", title: "Library", description: "Clerical node containing the SOP, standing orders, and other documents." },
+  { id: "schoolhouse", label: "NODE-03-SCHOOLHOUSE", title: "Schoolhouse", description: "Currently empty." }
 ];
 
 const authGateEl = document.getElementById("authGate");
@@ -56,21 +57,27 @@ const watchtower = createWatchtowerNode({
   onSubmitTraceBatch: submitTraceBatch
 });
 
-const library = createLibraryNode({
-  viewEl: document.getElementById("libraryView"),
-  contentEl: libraryContentEl,
-  subNavEl
-});
-
-const schoolhouse = createSchoolhouseNode({
-  viewEl: document.getElementById("schoolhouseView"),
-  subNavEl,
-  badgeNavEl: document.getElementById("schoolhouseBadgeNav"),
+const badges = createBadgeSection({
+  viewEl: document.getElementById("libraryBadgesView"),
+  badgeNavEl: document.getElementById("libraryBadgeNav"),
   badgePromptEl: document.getElementById("badgePrompt"),
   badgeWorkspaceEl: document.getElementById("badgeWorkspace"),
   previewEl: document.getElementById("preview"),
   placeholderFieldsEl: document.getElementById("placeholderFields"),
   downloadBtn: document.getElementById("downloadBadge")
+});
+
+const library = createLibraryNode({
+  viewEl: document.getElementById("libraryView"),
+  contentEl: libraryContentEl,
+  subNavEl,
+  badgeNavEl: document.getElementById("libraryBadgeNav"),
+  badges
+});
+
+const schoolhouse = createSchoolhouseNode({
+  viewEl: document.getElementById("schoolhouseView"),
+  subNavEl
 });
 
 const command = createCommandNode({
@@ -119,7 +126,7 @@ function clearTerminalData() {
   homeViewEl.hidden = true;
   watchtower.setData([]);
   library.setDocuments([]);
-  schoolhouse.setData([]);
+  badges.setData([]);
   command.setData([]);
   nodeNavEl.replaceChildren();
   subNavEl.replaceChildren();
@@ -208,21 +215,17 @@ async function loadNodeData(nodeId, generation = sessionGeneration) {
   }
 
   if (nodeId === "library") {
-    const { data, error } = await supabaseClient
-      .from("library_documents")
-      .select("id, title, description, body")
-      .order("title", { ascending: true });
+    const [{ data, error }, badgeEntries] = await Promise.all([
+      supabaseClient
+        .from("library_documents")
+        .select("id, title, description, body")
+        .order("title", { ascending: true }),
+      loadBadgeEntries()
+    ]);
     if (error) throw error;
     if (generation !== sessionGeneration) return;
     library.setDocuments(data ?? []);
-    loadedNodes.add(nodeId);
-    return;
-  }
-
-  if (nodeId === "schoolhouse") {
-    const badgeEntries = await loadBadgeEntries();
-    if (generation !== sessionGeneration) return;
-    schoolhouse.setData(badgeEntries);
+    badges.setData(badgeEntries);
     loadedNodes.add(nodeId);
     return;
   }

@@ -2,35 +2,35 @@
   {
     "id": "section-chief",
     "label": "SECTION CHIEF",
-    "file": "./data/svg/rank-badge.svg?v=6",
+    "file": "./data/svg/rank-badge.svg?v=7",
     "iconId": "section-chief",
     "downloadName": "section-chief.svg"
   },
   {
     "id": "supervisor",
     "label": "SUPERVISOR",
-    "file": "./data/svg/rank-badge.svg?v=6",
+    "file": "./data/svg/rank-badge.svg?v=7",
     "iconId": "supervisor",
     "downloadName": "supervisor.svg"
   },
   {
     "id": "senior-agent",
     "label": "SENIOR AGENT",
-    "file": "./data/svg/rank-badge.svg?v=6",
+    "file": "./data/svg/rank-badge.svg?v=7",
     "iconId": "senior-agent",
     "downloadName": "senior-agent.svg"
   },
   {
     "id": "agent",
     "label": "AGENT",
-    "file": "./data/svg/rank-badge.svg?v=6",
+    "file": "./data/svg/rank-badge.svg?v=7",
     "iconId": "agent",
     "downloadName": "agent.svg"
   },
   {
     "id": "probationary-agent",
     "label": "PROBATIONARY AGENT",
-    "file": "./data/svg/rank-badge.svg?v=6",
+    "file": "./data/svg/rank-badge.svg?v=7",
     "iconId": "probationary-agent",
     "downloadName": "probationary-agent.svg"
   },

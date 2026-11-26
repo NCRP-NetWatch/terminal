@@ -113,7 +113,7 @@
 
       .corner-bracket {
         fill: none;
-        stroke: #ff4766;
+        stroke: var(--corner-accent, #ff4766);
         stroke-width: 2.5;
       }
     </style>

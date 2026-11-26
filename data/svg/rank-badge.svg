@@ -18,7 +18,7 @@
       <rect x="36" y="36" width="828" height="828" />
     </clipPath>
     <clipPath id="credentialShieldClip">
-      <path d="M 216,220 H 684 V 546 C 684,590 594,635 450,660 C 306,635 216,590 216,546 Z" />
+      <path d="M 228,220 H 672 V 546 C 672,590 585,635 450,660 C 315,635 228,590 228,546 Z" />
     </clipPath>
   </defs>
 
@@ -29,18 +29,18 @@
     <use href="GATEWAY_BACKGROUND_URL#cyberspace-floor" />
   </g>
 
-  <path d="M 204,208 H 696 V 548 C 696,596 600,647 450,674 C 300,647 204,596 204,548 Z"
+  <path d="M 216,208 H 684 V 548 C 684,596 591,647 450,674 C 309,647 216,596 216,548 Z"
     fill="url(#credentialGlass)" stroke="#00f2fe" stroke-width="2.2" />
-  <path d="M 216,220 H 684 V 546 C 684,590 594,635 450,660 C 306,635 216,590 216,546 Z"
+  <path d="M 228,220 H 672 V 546 C 672,590 585,635 450,660 C 315,635 228,590 228,546 Z"
     fill="none" stroke="#7bf0ff" stroke-width="0.85" opacity="0.42" />
-  <path d="M 204,326 V 208 H 322 M 578,208 H 696 V 326"
-    fill="none" stroke="#00f2fe" stroke-width="3" filter="url(#badgeEdgeGlow)" />
+  <path d="M 216,326 V 208 H 334 M 566,208 H 684 V 326"
+    fill="none" stroke="#RANK_ACCENT#" stroke-width="3" filter="url(#badgeEdgeGlow)" />
 
   <g clip-path="url(#credentialShieldClip)">
     <text x="450" y="244" text-anchor="middle" class="micro" font-size="10" fill="#ff8fa3" letter-spacing="2.4">NODE-02-LIBRARY</text>
     <text x="450" y="273" text-anchor="middle" class="micro" font-size="10" fill="#7bf0ff" letter-spacing="2.2">NETWATCH // NIGHT CITY FIELD OFFICE</text>
     <text x="450" y="301" text-anchor="middle" class="orbit" font-size="16" font-weight="700" fill="#00f2fe" letter-spacing="3">PERSONNEL CREDENTIAL</text>
-    <path d="M 274,316 H 626" fill="none" stroke="#00f2fe" stroke-width="1" opacity="0.55" />
+    <path d="M 284,316 H 616" fill="none" stroke="#00f2fe" stroke-width="1" opacity="0.55" />
 
     <!-- One shield silhouette carries the translucent NetWatch wireframe globe. -->
     <g fill="none" stroke="#RANK_ACCENT#" stroke-width="1.5" opacity="0.3">
@@ -59,5 +59,5 @@
     <text x="450" y="590" text-anchor="middle" class="orbit" font-size="18" font-weight="700" fill="#ffffff" letter-spacing="2">[AGENT NAME]</text>
   </g>
 
-  <use href="GATEWAY_BACKGROUND_URL#icon-border-corners" />
+  <use href="GATEWAY_BACKGROUND_URL#icon-border-corners" style="--corner-accent: #RANK_ACCENT#" />
 </svg>

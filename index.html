@@ -46,7 +46,7 @@
       <nav id="nodeNav" class="node-nav" aria-label="Nodes"></nav>
       <button id="signOutBtn" type="button">Disconnect</button>
       <nav id="subNav" class="sub-nav" aria-label="Node Selections"></nav>
-      <nav id="schoolhouseBadgeNav" class="badge-nav" aria-label="Badges" hidden></nav>
+      <nav id="libraryBadgeNav" class="badge-nav" aria-label="Badges" hidden></nav>
     </header>
 
     <section id="homeView" class="home-view" hidden aria-labelledby="homeTitle">
@@ -160,21 +160,23 @@
 
   <section id="libraryView" hidden>
     <h1 class="node-title">Node-02-Library</h1>
+    <section id="libraryBadgesView" hidden aria-label="Badge customizer">
+      <p id="badgePrompt" class="badge-prompt">Choose a badge to preview and personalize it.</p>
+      <div id="badgeWorkspace" class="workspace" hidden>
+        <div id="preview" class="preview"></div>
+        <section class="placeholder-panel" aria-labelledby="placeholderTitle">
+          <h2 id="placeholderTitle">PERSONALIZE BADGE</h2>
+          <p>Fill in the bracketed fields to update the preview.</p>
+          <div id="placeholderFields" class="placeholder-fields"></div>
+          <button id="downloadBadge" class="placeholder-download" type="button">Download badge</button>
+        </section>
+      </div>
+    </section>
     <div id="libraryContent" class="library-content" aria-live="polite"></div>
   </section>
 
   <section id="schoolhouseView" hidden>
     <h1 class="node-title">Node-03-Schoolhouse</h1>
-    <p id="badgePrompt" class="badge-prompt">Choose a badge to preview and personalize it.</p>
-    <div id="badgeWorkspace" class="workspace" hidden>
-      <div id="preview" class="preview"></div>
-      <section class="placeholder-panel" aria-labelledby="placeholderTitle">
-        <h2 id="placeholderTitle">PERSONALIZE BADGE</h2>
-        <p>Fill in the bracketed fields to update the preview.</p>
-        <div id="placeholderFields" class="placeholder-fields"></div>
-        <button id="downloadBadge" class="placeholder-download" type="button">Download badge</button>
-      </section>
-    </div>
   </section>
 
   <section id="commandView" class="home-view" hidden>

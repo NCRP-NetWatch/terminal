@@ -89,22 +89,38 @@ export function createWatchtowerNode({
     const nameInput = row.querySelector('[name="name"]');
     const affiliationInput = row.querySelector('[name="affiliation"]');
     const statusInput = row.querySelector('[name="status"]');
-    let autoFilledDetails;
+    let autoFilledDetails = {};
     const fillSavedTargetDetails = () => {
       const target = records.find((record) =>
         String(record.name ?? "").trim().toLocaleLowerCase()
           === nameInput.value.trim().toLocaleLowerCase()
       );
       if (target) {
-        affiliationInput.value = target.affiliation ?? "";
-        statusInput.value = target.status ?? "";
-        autoFilledDetails = { affiliation: affiliationInput.value, status: statusInput.value };
+        const nextAutoFilledDetails = {};
+        for (const [field, input] of Object.entries({
+          affiliation: affiliationInput,
+          status: statusInput
+        })) {
+          const wasAutoFilled = Object.prototype.hasOwnProperty.call(autoFilledDetails, field)
+            && input.value === autoFilledDetails[field];
+          if (!input.value.trim() || wasAutoFilled) {
+            input.value = target[field] ?? "";
+            nextAutoFilledDetails[field] = input.value;
+          }
+        }
+        autoFilledDetails = nextAutoFilledDetails;
         return;
       }
-      if (!autoFilledDetails) return;
-      if (affiliationInput.value === autoFilledDetails.affiliation) affiliationInput.value = "";
-      if (statusInput.value === autoFilledDetails.status) statusInput.value = "";
-      autoFilledDetails = undefined;
+      for (const [field, input] of Object.entries({
+        affiliation: affiliationInput,
+        status: statusInput
+      })) {
+        if (Object.prototype.hasOwnProperty.call(autoFilledDetails, field)
+          && input.value === autoFilledDetails[field]) {
+          input.value = "";
+        }
+      }
+      autoFilledDetails = {};
     };
     nameInput.addEventListener("input", fillSavedTargetDetails);
     nameInput.addEventListener("change", fillSavedTargetDetails);

@@ -1,4 +1,8 @@
 const WORLD_YEAR_OFFSET = 51;
+const WORLD_DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
+  dateStyle: "long",
+  timeZone: "UTC"
+});
 
 export function getWorldDatePresentation(value) {
   const sourceDate = new Date(`${value}T12:00:00Z`);
@@ -12,9 +16,6 @@ export function getWorldDatePresentation(value) {
 
   return {
     iso: worldDate.toISOString().slice(0, 10),
-    label: new Intl.DateTimeFormat(undefined, {
-      dateStyle: "long",
-      timeZone: "UTC"
-    }).format(worldDate)
+    label: WORLD_DATE_FORMATTER.format(worldDate)
   };
 }

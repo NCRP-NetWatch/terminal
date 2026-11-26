@@ -1,6 +1,13 @@
 import { getRankIcon } from "./rank-icons.js";
 
 const PLACEHOLDER_PATTERN = /\[[^\[\]\r\n]+\]/g;
+const HTML_ESCAPE_ENTITIES = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&apos;"
+};
 const BADGE_FILES = new Map();
 let manifestPromise;
 let svgInstanceSequence = 0;
@@ -8,13 +15,7 @@ let svgInstanceSequence = 0;
 export function renderBadgeSvg(svgText, values = {}) {
   return svgText.replace(PLACEHOLDER_PATTERN, (token) => {
     const value = String(values[token] ?? "");
-    return value.replace(/[&<>"']/g, (character) => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&apos;"
-    })[character]) || token;
+    return value.replace(/[&<>"']/g, (character) => HTML_ESCAPE_ENTITIES[character]) || token;
   });
 }
 

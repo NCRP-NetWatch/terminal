@@ -17,6 +17,7 @@ const WATCHTOWER_PANELS = [
   { id: "recorder", label: "TRACE RECORDER" },
   { id: "database", label: "TRACE DATABASE" }
 ];
+const SUGGESTION_FIELDS = ["name", "affiliation", "status"];
 
 export function createWatchtowerNode({
   viewEl,
@@ -202,10 +203,6 @@ export function createWatchtowerNode({
     return TRACE_LOG_NOTE.test(getNoteText(note));
   }
 
-  function hasContentNote(row) {
-    return getRawNotes(row).some((note) => getNoteText(note) && !isTraceLogNote(note));
-  }
-
   function getNotes(row) {
     const notes = getRawNotes(row);
     const contentNotes = notes.filter((note) => getNoteText(note) && !isTraceLogNote(note));
@@ -282,7 +279,7 @@ export function createWatchtowerNode({
       const nameTd = document.createElement("td");
       const nameButton = document.createElement("button");
       const notes = getNotes(row);
-      const hasNotes = hasContentNote(row);
+      const hasNotes = notes.some((note) => !isTraceLogNote(note));
       nameButton.type = "button";
       nameButton.className = "person-name";
       nameButton.textContent = row.name ?? "";
@@ -330,21 +327,24 @@ export function createWatchtowerNode({
     setData(data) {
       records = Array.isArray(data) ? data : [];
       titleEl.textContent = `Node-01-Watchtower (${records.length})`;
-      const makeSuggestions = (field) => {
-        const suggestions = new Map();
-        for (const record of records) {
+      const suggestions = Object.fromEntries(
+        SUGGESTION_FIELDS.map((field) => [field, new Map()])
+      );
+      for (const record of records) {
+        for (const field of SUGGESTION_FIELDS) {
+          const values = suggestions[field];
           const value = String(record[field] ?? "").trim();
           const normalized = value.toLocaleLowerCase();
-          if (value && !suggestions.has(normalized)) suggestions.set(normalized, value);
+          if (value && !values.has(normalized)) values.set(normalized, value);
         }
-        return [...suggestions.values()]
+      }
+      const makeSuggestions = (field) => [...suggestions[field].values()]
           .sort(collator.compare)
           .map((value) => {
             const option = document.createElement("option");
             option.value = value;
             return option;
           });
-      };
       targetSuggestionsEl.replaceChildren(...makeSuggestions("name"));
       affiliationSuggestionsEl.replaceChildren(...makeSuggestions("affiliation"));
       statusSuggestionsEl.replaceChildren(...makeSuggestions("status"));

@@ -21,6 +21,7 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, getSupabaseClie
       const rankSelect = document.createElement("select");
       rankSelect.className = "db-sort";
       const currentRank = normalizeRank(profile.rank);
+      const targetLevel = getRankLevel(profile.rank);
       rankSelect.setAttribute("aria-label", `Rank for ${profile.agent_name || "unnamed agent"}`);
       if (!currentRank) {
         const unassigned = document.createElement("option");
@@ -28,7 +29,7 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, getSupabaseClie
         unassigned.textContent = "Unassigned";
         unassigned.selected = true;
         rankSelect.append(unassigned);
-      } else if (getRankLevel(profile.rank) < 0) {
+      } else if (targetLevel < 0) {
         const unknown = document.createElement("option");
         unknown.value = profile.rank;
         unknown.textContent = profile.rank;
@@ -45,7 +46,6 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, getSupabaseClie
       rankCell.append(rankSelect);
 
       const actionCell = document.createElement("td");
-      const targetLevel = getRankLevel(profile.rank);
       const canEdit = actorLevel > targetLevel && targetLevel >= 0;
       rankSelect.disabled = !canEdit;
       if (canEdit) {

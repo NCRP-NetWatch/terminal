@@ -13,7 +13,6 @@
   --color-ink: #02080c;
   --color-accent-soft: #91cbd1;
   --color-document-ink: #173d49;
-  --color-page-void: #010408;
   --color-status-hostile: #d98f98;
   --color-status-monitored: #d3bd78;
   --color-status-neutral: #83a9c2;
@@ -915,7 +914,6 @@ tbody tr.row-status-contained {
   .library-document h6 {
     color: LinkText;
   }
-
 }
 
 [hidden] {

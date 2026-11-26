@@ -50,173 +50,173 @@
     </header>
 
     <section id="homeView" class="home-view" hidden aria-labelledby="homeTitle">
-    <div class="home-overview">
-      <div class="home-welcome">
-        <p class="home-kicker">NCRP // NETWATCH NCFO</p>
-        <h1 id="homeTitle" class="node-title">Welcome to NetWatch</h1>
-        <p class="home-intro">Choose a node to get started.</p>
-      </div>
-      <div id="homeBadge" class="home-badge" role="img" aria-label="Agent rank badge" hidden></div>
-    </div>
-    <div id="homeNodeGrid" class="home-node-grid"></div>
-  </section>
-
-  <section id="watchtowerView" hidden>
-    <h1 id="watchtowerTitle" class="node-title">Node-01-Watchtower (0)</h1>
-    <section id="watchtowerRecorderPanel" class="trace-recorder" hidden aria-labelledby="traceRecorderTitle">
-      <h2 id="traceRecorderTitle" class="node-title">TRACE RECORDER</h2>
-      <p class="trace-recorder-intro">Enter one trace per completed row. Existing targets are suggested by name; selecting one fills its saved affiliation and status. Blank rows are ignored.</p>
-      <div class="trace-recorder-layout">
-        <form id="traceRecorderForm">
-          <datalist id="watchtowerTargetSuggestions"></datalist>
-          <datalist id="watchtowerAffiliationSuggestions"></datalist>
-          <datalist id="watchtowerStatusSuggestions"></datalist>
-          <div class="trace-recorder-table-wrap">
-            <table class="trace-recorder-table">
-              <thead>
-                <tr>
-                  <th scope="col">Name</th>
-                  <th scope="col">Affiliation</th>
-                  <th scope="col">Status</th>
-                  <th scope="col">Notes</th>
-                </tr>
-              </thead>
-              <tbody id="traceRecorderRows"></tbody>
-            </table>
-          </div>
-          <div class="trace-recorder-actions">
-            <span id="traceRowCount" class="trace-row-count" aria-live="polite"></span>
-            <div class="trace-recorder-buttons">
-              <button id="addTraceRow" type="button">Add row</button>
-              <button id="submitTraceBatch" class="trace-submit" type="submit">Submit trace batch</button>
-            </div>
-          </div>
-          <p id="traceRecorderMessage" class="trace-recorder-message" role="status" aria-live="polite"></p>
-        </form>
-
-        <aside class="watchtower-status-key" aria-labelledby="watchtowerStatusKeyTitle">
-          <h3 id="watchtowerStatusKeyTitle">WATCHTOWER STATUS KEY</h3>
-          <dl>
-            <div class="status-key-item">
-              <dt class="status-neutral">NEUTRAL</dt>
-              <dd>No current hostile or high-priority indicators.</dd>
-            </div>
-            <div class="status-key-item">
-              <dt class="status-monitored">MONITORED</dt>
-              <dd>Lied to an Agent; displayed evasive or suspicious behavior when confronted; fled the trace; non-lethally resisted capture; or possesses or uses an unapproved pre-DataKrash OS or NetRunner NetDriver OS.</dd>
-            </div>
-            <div class="status-key-item">
-              <dt class="status-hostile">HOSTILE</dt>
-              <dd>Lethally resisted capture but complied when subdued; lethally resisted capture, resulting in an Agent being downed; or travels in large groups.</dd>
-            </div>
-            <div class="status-key-item">
-              <dt class="status-hostile">DANGEROUS</dt>
-              <dd>Actively hunts, stalks, or predates upon NetWatch Agents; remains non-compliant after being downed; or is extremely hostile to NetWatch or its Agents. NetWatch is authorized to shoot DANGEROUS Runners on sight.</dd>
-            </div>
-            <div class="status-key-item">
-              <dt class="status-contained">CONTAINED</dt>
-              <dd>Under a protective agreement authorized by a Supervisor or higher. If traced, disconnect and redirect to a separate call.</dd>
-            </div>
-          </dl>
-        </aside>
-      </div>
-    </section>
-
-    <div id="watchtowerDatabasePanel">
-      <div class="db-controls">
-        <input
-          id="dbSearch"
-          class="db-search"
-          type="search"
-          aria-label="Search Watchtower Database"
-          placeholder="Search name, affiliation, traces, or status..."
-        />
-        <label class="db-sort-label" for="dbSort">Sort by</label>
-        <select id="dbSort" class="db-sort" aria-label="Sort by Watchtower entries">
-          <option value="name-asc">Name (A–Z)</option>
-          <option value="name-desc">Name (Z–A)</option>
-          <option value="affiliation-asc">Affiliation (A–Z)</option>
-          <option value="affiliation-desc">Affiliation (Z–A)</option>
-          <option value="status-asc">Status (A–Z)</option>
-          <option value="status-desc">Status (Z–A)</option>
-          <option value="traces-desc">Traces (most first)</option>
-          <option value="traces-asc">Traces (fewest first)</option>
-        </select>
-      </div>
-      <table aria-label="Watchtower trace database">
-        <thead>
-          <tr>
-            <th scope="col">Name</th>
-            <th scope="col">Affiliation</th>
-            <th scope="col">Status</th>
-            <th scope="col">Times Traced</th>
-          </tr>
-        </thead>
-        <tbody id="dbBody"></tbody>
-      </table>
-    </div>
-
-  </section>
-
-  <section id="libraryView" hidden>
-    <h1 class="node-title">Node-02-Library</h1>
-    <section id="libraryBadgesView" hidden aria-label="Badge customizer">
-      <p id="badgePrompt" class="badge-prompt">Choose a badge to preview and personalize it.</p>
-      <div id="badgeWorkspace" class="workspace" hidden>
-        <div id="preview" class="preview"></div>
-        <section class="placeholder-panel" aria-labelledby="placeholderTitle">
-          <h2 id="placeholderTitle">PERSONALIZE BADGE</h2>
-          <p>Fill in the bracketed fields to update the preview.</p>
-          <div id="placeholderFields" class="placeholder-fields"></div>
-          <button id="downloadBadge" class="placeholder-download" type="button">Download badge</button>
-        </section>
-      </div>
-    </section>
-    <div id="libraryContent" class="library-content" aria-live="polite"></div>
-  </section>
-
-  <section id="schoolhouseView" hidden>
-    <h1 class="node-title">Node-03-Schoolhouse</h1>
-  </section>
-
-  <section id="commandView" class="home-view" hidden>
-    <h1 class="node-title">NODE-0X-COMMAND</h1>
-    <section id="commandAccessContent" aria-labelledby="accessManagerTitle">
       <div class="home-overview">
         <div class="home-welcome">
-          <p class="home-kicker">COMMAND // PERSONNEL CONTROL</p>
-          <h2 id="accessManagerTitle" class="node-title">ACCESS MANAGER</h2>
+          <p class="home-kicker">NCRP // NETWATCH NCFO</p>
+          <h1 id="homeTitle" class="node-title">Welcome to NetWatch</h1>
+          <p class="home-intro">Choose a node to get started.</p>
         </div>
-        <p class="home-intro">You can change ranks below your own. Equal and higher ranks are locked. Rank changes are sent to Discord.</p>
+        <div id="homeBadge" class="home-badge" role="img" aria-label="Agent rank badge" hidden></div>
       </div>
-      <p class="trace-recorder-message" data-access-status role="status" aria-live="polite"></p>
-      <div class="trace-recorder-table-wrap">
-        <table class="trace-recorder-table" aria-label="Personnel ranks">
+      <div id="homeNodeGrid" class="home-node-grid"></div>
+    </section>
+
+    <section id="watchtowerView" hidden>
+      <h1 id="watchtowerTitle" class="node-title">Node-01-Watchtower (0)</h1>
+      <section id="watchtowerRecorderPanel" class="trace-recorder" hidden aria-labelledby="traceRecorderTitle">
+        <h2 id="traceRecorderTitle" class="node-title">TRACE RECORDER</h2>
+        <p class="trace-recorder-intro">Enter one trace per completed row. Existing targets are suggested by name; selecting one fills its saved affiliation and status. Blank rows are ignored.</p>
+        <div class="trace-recorder-layout">
+          <form id="traceRecorderForm">
+            <datalist id="watchtowerTargetSuggestions"></datalist>
+            <datalist id="watchtowerAffiliationSuggestions"></datalist>
+            <datalist id="watchtowerStatusSuggestions"></datalist>
+            <div class="trace-recorder-table-wrap">
+              <table class="trace-recorder-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Affiliation</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Notes</th>
+                  </tr>
+                </thead>
+                <tbody id="traceRecorderRows"></tbody>
+              </table>
+            </div>
+            <div class="trace-recorder-actions">
+              <span id="traceRowCount" class="trace-row-count" aria-live="polite"></span>
+              <div class="trace-recorder-buttons">
+                <button id="addTraceRow" type="button">Add row</button>
+                <button id="submitTraceBatch" class="trace-submit" type="submit">Submit trace batch</button>
+              </div>
+            </div>
+            <p id="traceRecorderMessage" class="trace-recorder-message" role="status" aria-live="polite"></p>
+          </form>
+
+          <aside class="watchtower-status-key" aria-labelledby="watchtowerStatusKeyTitle">
+            <h3 id="watchtowerStatusKeyTitle">WATCHTOWER STATUS KEY</h3>
+            <dl>
+              <div class="status-key-item">
+                <dt class="status-neutral">NEUTRAL</dt>
+                <dd>No current hostile or high-priority indicators.</dd>
+              </div>
+              <div class="status-key-item">
+                <dt class="status-monitored">MONITORED</dt>
+                <dd>Lied to an Agent; displayed evasive or suspicious behavior when confronted; fled the trace; non-lethally resisted capture; or possesses or uses an unapproved pre-DataKrash OS or NetRunner NetDriver OS.</dd>
+              </div>
+              <div class="status-key-item">
+                <dt class="status-hostile">HOSTILE</dt>
+                <dd>Lethally resisted capture but complied when subdued; lethally resisted capture, resulting in an Agent being downed; or travels in large groups.</dd>
+              </div>
+              <div class="status-key-item">
+                <dt class="status-hostile">DANGEROUS</dt>
+                <dd>Actively hunts, stalks, or predates upon NetWatch Agents; remains non-compliant after being downed; or is extremely hostile to NetWatch or its Agents. NetWatch is authorized to shoot DANGEROUS Runners on sight.</dd>
+              </div>
+              <div class="status-key-item">
+                <dt class="status-contained">CONTAINED</dt>
+                <dd>Under a protective agreement authorized by a Supervisor or higher. If traced, disconnect and redirect to a separate call.</dd>
+              </div>
+            </dl>
+          </aside>
+        </div>
+      </section>
+
+      <div id="watchtowerDatabasePanel">
+        <div class="db-controls">
+          <input
+            id="dbSearch"
+            class="db-search"
+            type="search"
+            aria-label="Search Watchtower Database"
+            placeholder="Search name, affiliation, traces, or status..."
+          />
+          <label class="db-sort-label" for="dbSort">Sort by</label>
+          <select id="dbSort" class="db-sort" aria-label="Sort by Watchtower entries">
+            <option value="name-asc">Name (A–Z)</option>
+            <option value="name-desc">Name (Z–A)</option>
+            <option value="affiliation-asc">Affiliation (A–Z)</option>
+            <option value="affiliation-desc">Affiliation (Z–A)</option>
+            <option value="status-asc">Status (A–Z)</option>
+            <option value="status-desc">Status (Z–A)</option>
+            <option value="traces-desc">Traces (most first)</option>
+            <option value="traces-asc">Traces (fewest first)</option>
+          </select>
+        </div>
+        <table aria-label="Watchtower trace database">
           <thead>
             <tr>
-              <th scope="col">Agent</th>
-              <th scope="col">Rank</th>
-              <th scope="col">Action</th>
+              <th scope="col">Name</th>
+              <th scope="col">Affiliation</th>
+              <th scope="col">Status</th>
+              <th scope="col">Times Traced</th>
             </tr>
           </thead>
-          <tbody data-access-body></tbody>
+          <tbody id="dbBody"></tbody>
         </table>
       </div>
+
     </section>
-  </section>
-  <dialog id="notesDialog" class="notes-dialog" aria-labelledby="notesTitle">
-    <div class="notes-panel">
-      <div class="notes-heading">
-        <div>
-          <p class="notes-kicker">WATCHTOWER // NETRUNNER FILE</p>
-          <h2 id="notesTitle"></h2>
+
+    <section id="libraryView" hidden>
+      <h1 class="node-title">Node-02-Library</h1>
+      <section id="libraryBadgesView" hidden aria-label="Badge customizer">
+        <p id="badgePrompt" class="badge-prompt">Choose a badge to preview and personalize it.</p>
+        <div id="badgeWorkspace" class="workspace" hidden>
+          <div id="preview" class="preview"></div>
+          <section class="placeholder-panel" aria-labelledby="placeholderTitle">
+            <h2 id="placeholderTitle">PERSONALIZE BADGE</h2>
+            <p>Fill in the bracketed fields to update the preview.</p>
+            <div id="placeholderFields" class="placeholder-fields"></div>
+            <button id="downloadBadge" class="placeholder-download" type="button">Download badge</button>
+          </section>
         </div>
-        <button id="closeNotes" class="notes-close" type="button" aria-label="Close notes">×</button>
+      </section>
+      <div id="libraryContent" class="library-content" aria-live="polite"></div>
+    </section>
+
+    <section id="schoolhouseView" hidden>
+      <h1 class="node-title">Node-03-Schoolhouse</h1>
+    </section>
+
+    <section id="commandView" class="home-view" hidden>
+      <h1 class="node-title">NODE-0X-COMMAND</h1>
+      <section id="commandAccessContent" aria-labelledby="accessManagerTitle">
+        <div class="home-overview">
+          <div class="home-welcome">
+            <p class="home-kicker">COMMAND // PERSONNEL CONTROL</p>
+            <h2 id="accessManagerTitle" class="node-title">ACCESS MANAGER</h2>
+          </div>
+          <p class="home-intro">You can change ranks below your own. Equal and higher ranks are locked. Rank changes are sent to Discord.</p>
+        </div>
+        <p class="trace-recorder-message" data-access-status role="status" aria-live="polite"></p>
+        <div class="trace-recorder-table-wrap">
+          <table class="trace-recorder-table" aria-label="Personnel ranks">
+            <thead>
+              <tr>
+                <th scope="col">Agent</th>
+                <th scope="col">Rank</th>
+                <th scope="col">Action</th>
+              </tr>
+            </thead>
+            <tbody data-access-body></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+    <dialog id="notesDialog" class="notes-dialog" aria-labelledby="notesTitle">
+      <div class="notes-panel">
+        <div class="notes-heading">
+          <div>
+            <p class="notes-kicker">WATCHTOWER // NETRUNNER FILE</p>
+            <h2 id="notesTitle"></h2>
+          </div>
+          <button id="closeNotes" class="notes-close" type="button" aria-label="Close notes">×</button>
+        </div>
+        <div class="notes-scanline" aria-hidden="true"></div>
+        <ol id="notesList" class="notes-list"></ol>
       </div>
-      <div class="notes-scanline" aria-hidden="true"></div>
-      <ol id="notesList" class="notes-list"></ol>
-    </div>
-  </dialog>
+    </dialog>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

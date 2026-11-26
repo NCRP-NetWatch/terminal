@@ -70,7 +70,7 @@ Deno.serve(async (request) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         embeds: [{
-          title: "NETWATCH // RANK CHANGE",
+          title: "LIBRARY // RANK CHANGE",
           description: `**${escapeDiscordText(actor.agent_name || "Unknown agent")}** changed **${escapeDiscordText(target.agent_name || "Unnamed agent")}** from **${escapeDiscordText(payload.old_rank || "Unassigned")}** to **${escapeDiscordText(newRank)}**.`,
           color: 0x00dbe8
         }],

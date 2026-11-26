@@ -1,6 +1,7 @@
 import { createWatchtowerNode } from "./nodes/watchtower.js";
 import { createLibraryNode } from "./nodes/library.js";
 import { createSchoolhouseNode } from "./nodes/schoolhouse.js";
+import { createCommandNode } from "./nodes/command.js";
 import { loadBadge, loadBadgeEntries, namespaceBadgeSvgIds, renderBadgeSvg } from "./nodes/badges.js";
 import { formatRank, getBadgeIdForRank, isAuthorizedRank } from "./nodes/ranks.js";
 import { renderNavButtons } from "./nodes/navigation.js";
@@ -9,7 +10,8 @@ import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "./supabase-config.js";
 const NODES = [
   { id: "watchtower", label: "NODE-01-WATCHTOWER", title: "Watchtower", description: "Trace node; stores traces and cases" },
   { id: "library", label: "NODE-02-LIBRARY", title: "Library", description: "Clerical/Logistics node; manages the budget and armory, contains the SOP, standing orders & other documents." },
-  { id: "schoolhouse", label: "NODE-03-SCHOOLHOUSE", title: "Schoolhouse", description: "Training node; stores training material." }
+  { id: "schoolhouse", label: "NODE-03-SCHOOLHOUSE", title: "Schoolhouse", description: "Training node; stores training material." },
+  { id: "command", label: "NODE-0X-COMMAND", title: "Command", description: "Personnel access and rank management." }
 ];
 
 const authGateEl = document.getElementById("authGate");
@@ -71,7 +73,15 @@ const schoolhouse = createSchoolhouseNode({
   downloadBtn: document.getElementById("downloadBadge")
 });
 
-const nodeControllers = { watchtower, library, schoolhouse };
+const command = createCommandNode({
+  viewEl: document.getElementById("commandView"),
+  subNavEl,
+  contentEl: document.getElementById("commandAccessContent"),
+  getSupabaseClient: () => supabaseClient,
+  getCurrentProfile: () => currentProfile
+});
+
+const nodeControllers = { watchtower, library, schoolhouse, command };
 const loadedNodes = new Set();
 let supabaseClient;
 let currentProfile;
@@ -110,12 +120,15 @@ function clearTerminalData() {
   watchtower.setData([]);
   library.setDocuments([]);
   schoolhouse.setData([]);
+  command.setData([]);
   nodeNavEl.replaceChildren();
   subNavEl.replaceChildren();
 }
 
 function getAllowedNodes(profile) {
-  return isAuthorizedRank(profile.rank) ? NODES : [];
+  if (!isAuthorizedRank(profile.rank)) return [];
+  const flags = Array.isArray(profile.flags) ? profile.flags : [];
+  return NODES.filter((node) => node.id !== "command" || flags.includes("COMMAND"));
 }
 
 function renderNodeNav(profile, activeId = activeNodeId) {
@@ -211,6 +224,13 @@ async function loadNodeData(nodeId, generation = sessionGeneration) {
     if (generation !== sessionGeneration) return;
     schoolhouse.setData(badgeEntries);
     loadedNodes.add(nodeId);
+    return;
+  }
+
+  if (nodeId === "command") {
+    await command.load();
+    if (generation !== sessionGeneration) return;
+    loadedNodes.add(nodeId);
   }
 }
 
@@ -304,7 +324,7 @@ async function activateSession(session) {
 
   const { data: profile, error } = await supabaseClient
     .from("profiles")
-    .select("user_id, agent_name, rank")
+    .select("user_id, agent_name, rank, flags")
     .eq("user_id", session.user.id)
     .maybeSingle();
 

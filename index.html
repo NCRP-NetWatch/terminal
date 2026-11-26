@@ -52,7 +52,7 @@
     <section id="homeView" class="home-view" hidden aria-labelledby="homeTitle">
     <div class="home-overview">
       <div class="home-welcome">
-        <p class="home-kicker">NCRP // NETWATCH OPERATIONS</p>
+        <p class="home-kicker">NCRP // NETWATCH NCFO</p>
         <h1 id="homeTitle" class="node-title">Welcome to NetWatch</h1>
         <p class="home-intro">Choose a node to get started.</p>
       </div>
@@ -175,6 +175,32 @@
         <button id="downloadBadge" class="placeholder-download" type="button">Download badge</button>
       </section>
     </div>
+  </section>
+
+  <section id="commandView" class="home-view" hidden>
+    <h1 class="node-title">NODE-0X-COMMAND</h1>
+    <section id="commandAccessContent" aria-labelledby="accessManagerTitle">
+      <div class="home-overview">
+        <div class="home-welcome">
+          <p class="home-kicker">COMMAND // PERSONNEL CONTROL</p>
+          <h2 id="accessManagerTitle" class="node-title">ACCESS MANAGER</h2>
+        </div>
+        <p class="home-intro">You can change ranks below your own. Equal and higher ranks are locked. Rank changes are sent to Discord.</p>
+      </div>
+      <p class="trace-recorder-message" data-access-status role="status" aria-live="polite"></p>
+      <div class="trace-recorder-table-wrap">
+        <table class="trace-recorder-table" aria-label="Personnel ranks">
+          <thead>
+            <tr>
+              <th scope="col">Agent</th>
+              <th scope="col">Rank</th>
+              <th scope="col">Action</th>
+            </tr>
+          </thead>
+          <tbody data-access-body></tbody>
+        </table>
+      </div>
+    </section>
   </section>
   <dialog id="notesDialog" class="notes-dialog" aria-labelledby="notesTitle">
     <div class="notes-panel">

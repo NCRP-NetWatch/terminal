@@ -439,6 +439,10 @@ tbody tr.row-status-contained {
   background: linear-gradient(90deg, rgba(var(--rgb-status-contained), 0.02), rgba(var(--rgb-status-contained), 0.105) 68%, rgba(var(--rgb-status-contained), 0.03)), var(--color-surface);
 }
 
+tbody tr.row-status-neutral {
+  background: linear-gradient(90deg, rgba(var(--rgb-white), 0.02), rgba(var(--rgb-white), 0.06) 68%, rgba(var(--rgb-white), 0.025)), var(--color-surface);
+}
+
 .status-hostile {
   color: var(--color-status-hostile);
   font-weight: 700;
@@ -1082,3 +1086,6 @@ button:disabled {
 #commandBudgetContent [data-budget-totals]{padding:12px;border-left:2px solid var(--color-accent);background:rgba(var(--rgb-accent),.045);color:var(--color-highlight);font-family:var(--font-display)}
 #commandBudgetContent .db-controls label{display:inline-flex;align-items:center;gap:8px;color:var(--color-accent-bright)}
 #commandBudgetEntryContent .trace-recorder-table{min-width:1120px}
+.budget-available{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.budget-status{display:inline-block;padding:3px 7px;border:1px solid currentColor;border-radius:2px;font-size:.78rem;letter-spacing:.06em;white-space:nowrap}
+#commandBudgetEntryContent .ledger-entry-guidance{display:block;max-width:240px;margin-top:5px;color:var(--color-accent-bright);font-size:.76rem;line-height:1.4}

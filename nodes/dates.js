@@ -1,8 +1,14 @@
-const WORLD_YEAR_OFFSET = 51;
+export const WORLD_YEAR_OFFSET = 51;
 const WORLD_DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
   dateStyle: "long",
   timeZone: "UTC"
 });
+
+export function getWorldFiscalYear(realDate = new Date()) {
+  const date = realDate instanceof Date ? realDate : new Date(realDate);
+  if (Number.isNaN(date.valueOf())) return null;
+  return date.getFullYear() + WORLD_YEAR_OFFSET;
+}
 
 export function getWorldDatePresentation(value) {
   const sourceDate = new Date(`${value}T12:00:00Z`);

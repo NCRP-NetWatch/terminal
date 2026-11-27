@@ -97,10 +97,6 @@ export function aggregateBudgetRows(rows, { fundCode } = {}) {
     const nodes = ownerNode
       ? [ownerNode]
       : [...new Set(scopes.map(([scope]) => scope.split("::")[0]).filter(Boolean))].sort(textCompare);
-    const objectCodes = [...new Set([
-      ...scopes.map(([scope]) => scope.split("::")[1]),
-      ...history.filter((row) => ["PURCHASE", "CREDIT"].includes(row.entry_type)).map((row) => row.object_code)
-    ].filter(Boolean))].sort(textCompare);
     const availableCents = hasInitialDeposit ? actualsCents - encumberedCents : undefined;
     const usedRate = hasInitialDeposit && starter > 0
       ? Math.max(0, (starter - actualsCents + encumberedCents) / starter)
@@ -116,7 +112,6 @@ export function aggregateBudgetRows(rows, { fundCode } = {}) {
     summary.push({
       fund_code: fund,
       node: nodes.join(", "),
-      object_code: objectCodes.join(", "),
       starter: starter === undefined ? undefined : dollars(starter),
       encumbered: dollars(encumberedCents),
       actuals: actualsCents === undefined ? undefined : dollars(actualsCents),

@@ -95,7 +95,7 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
     const result=aggregateBudgetRows(ledgerRows,{fundCode:fundFilter.value.trim()||undefined});
     totals.textContent="Starter "+formatAmount(result.totalStarter)+" · Encumbered "+formatAmount(result.totalEncumbered)+" · Actuals "+formatAmount(result.totalActuals)+" · Available "+formatAmount(result.totalAvailable);
     const q=search.value.trim().toLocaleLowerCase(), parts=sort.value.split("-");
-    const shown=result.rows.filter(r=>[r.fund_code,r.node,r.object_code].join(" ").toLocaleLowerCase().includes(q));
+    const shown=result.rows.filter(r=>[r.fund_code,r.node].join(" ").toLocaleLowerCase().includes(q));
     shown.sort((a,b)=>{const x=a[parts[0]],y=b[parts[0]],d=typeof x==="number"?x-y:String(x||"").localeCompare(String(y||""),undefined,{numeric:true,sensitivity:"base"});return parts[1]==="desc"?-d:d;});
     budgetBody.replaceChildren(...shown.map(r=>{
       const tr=document.createElement("tr"), availableCell=document.createElement("td"), amount=document.createElement("span"), badge=document.createElement("span");
@@ -105,7 +105,7 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
       fundButton.type="button";fundButton.className="person-name";fundButton.textContent=r.fund_code;fundButton.setAttribute("aria-label","View budget history for fund "+r.fund_code);
       fundButton.addEventListener("click",()=>openAudit({fundCode:r.fund_code}));fundCell.append(fundButton);
       amount.textContent=r.available===undefined?"—":formatAmount(r.available);badge.className="budget-status status-"+statusClass;badge.textContent=r.status;availableCell.className="budget-available";availableCell.append(amount,badge);
-      tr.append(fundCell,cell(r.starter===undefined?"—":formatAmount(r.starter)),cell(r.node||"—"),cell(r.object_code||"—"),cell(formatAmount(r.encumbered)),cell(r.actuals===undefined?"—":formatAmount(r.actuals)),availableCell,cell(r.usedRate===undefined?"—":(r.usedRate*100).toFixed(1)+"%"));
+      tr.append(fundCell,cell(r.starter===undefined?"—":formatAmount(r.starter)),cell(r.node||"—"),cell(formatAmount(r.encumbered)),cell(r.actuals===undefined?"—":formatAmount(r.actuals)),availableCell,cell(r.usedRate===undefined?"—":(r.usedRate*100).toFixed(1)+"%"));
       return tr;
     }));
     budgetStatus.textContent=shown.length+" funds shown.";

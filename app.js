@@ -9,7 +9,7 @@ import { renderNavButtons } from "./nodes/navigation.js";
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "./supabase-config.js";
 
 const NODES = [
-  { id: "command", label: "NODE-0X-COMMAND", title: "Command", description: "Personnel access and rank management." },
+  { id: "command", label: "NODE-0X-COMMAND", title: "Command", description: "Personnel access, budget rollup, audit history, and ledger entry." },
   { id: "watchtower", label: "NODE-01-WATCHTOWER", title: "Watchtower", description: "Trace node; stores traces and cases" },
   { id: "library", label: "NODE-02-LIBRARY", title: "Library", description: "Clerical node containing the SOP, standing orders, and other documents." },
   { id: "schoolhouse", label: "NODE-03-SCHOOLHOUSE", title: "Schoolhouse", description: "Currently empty." }
@@ -84,6 +84,12 @@ const command = createCommandNode({
   viewEl: document.getElementById("commandView"),
   subNavEl,
   contentEl: document.getElementById("commandAccessContent"),
+  budgetContentEl: document.getElementById("commandBudgetContent"),
+  entryContentEl: document.getElementById("commandBudgetEntryContent"),
+  notesDialogEl: document.getElementById("notesDialog"),
+  notesTitleEl: document.getElementById("notesTitle"),
+  notesListEl: document.getElementById("notesList"),
+  closeNotesEl: document.getElementById("closeNotes"),
   getSupabaseClient: () => supabaseClient,
   getCurrentProfile: () => currentProfile
 });

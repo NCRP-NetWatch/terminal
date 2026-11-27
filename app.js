@@ -4,7 +4,7 @@ import { createSchoolhouseNode } from "./nodes/schoolhouse.js";
 import { createBadgeSection } from "./nodes/badge-section.js";
 import { createCommandNode } from "./nodes/command.js";
 import { loadBadge, loadBadgeEntries, namespaceBadgeSvgIds, renderBadgeSvg } from "./nodes/badges.js";
-import { formatRank, getBadgeIdForRank, isAuthorizedRank } from "./nodes/ranks.js";
+import { formatRank, getBadgeIdForRank, isAuthorizedRank, isReadOnlyRank, isTraceOnlyRank, normalizeRank } from "./nodes/ranks.js";
 import { renderNavButtons } from "./nodes/navigation.js";
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "./supabase-config.js";
 
@@ -54,6 +54,7 @@ const watchtower = createWatchtowerNode({
   rowCountEl: document.getElementById("traceRowCount"),
   submitBatchBtn: document.getElementById("submitTraceBatch"),
   recorderMessageEl: document.getElementById("traceRecorderMessage"),
+  isReadOnly: () => isReadOnlyRank(currentProfile?.rank),
   onSubmitTraceBatch: submitTraceBatch
 });
 
@@ -64,7 +65,8 @@ const badges = createBadgeSection({
   badgeWorkspaceEl: document.getElementById("badgeWorkspace"),
   previewEl: document.getElementById("preview"),
   placeholderFieldsEl: document.getElementById("placeholderFields"),
-  downloadBtn: document.getElementById("downloadBadge")
+  downloadBtn: document.getElementById("downloadBadge"),
+  isReadOnly: () => isReadOnlyRank(currentProfile?.rank)
 });
 
 const library = createLibraryNode({
@@ -93,7 +95,8 @@ const command = createCommandNode({
   notesListEl: document.getElementById("notesList"),
   closeNotesEl: document.getElementById("closeNotes"),
   getSupabaseClient: () => supabaseClient,
-  getCurrentProfile: () => currentProfile
+  getCurrentProfile: () => currentProfile,
+  isReadOnly: () => isReadOnlyRank(currentProfile?.rank)
 });
 
 const nodeControllers = { watchtower, library, schoolhouse, command };
@@ -142,6 +145,8 @@ function clearTerminalData() {
 
 function getAllowedNodes(profile) {
   if (!isAuthorizedRank(profile.rank)) return [];
+  if (isTraceOnlyRank(profile.rank)) return NODES.filter((node) => node.id === "watchtower");
+  if (normalizeRank(profile.rank) === "ncpd command") return NODES;
   const flags = Array.isArray(profile.flags) ? profile.flags : [];
   return NODES.filter((node) => node.id !== "command" || flags.includes("COMMAND"));
 }
@@ -176,7 +181,7 @@ function showHome() {
     title.textContent = node.title;
     const description = document.createElement("span");
     description.className = "home-node-description";
-    description.textContent = node.description;
+    description.textContent = `${node.description}${isReadOnlyRank(currentProfile.rank) ? " Read-only access." : ""}`;
     card.append(label, title, description);
     card.addEventListener("click", () => void renderNode(node.id));
     return card;
@@ -246,6 +251,7 @@ async function loadNodeData(nodeId, generation = sessionGeneration) {
 }
 
 async function submitTraceBatch(entries) {
+  if (isReadOnlyRank(currentProfile?.rank)) throw new Error("This rank has read-only access.");
   if (!activeUserId) throw new Error("Your sign-in session has expired. Sign in again and retry.");
 
   const rows = entries.map((entry) => ({
@@ -356,7 +362,15 @@ async function activateSession(session) {
     return;
   }
 
+  currentProfile = profile;
+
   if (!String(profile.agent_name ?? "").trim()) {
+    if (isReadOnlyRank(profile.rank)) {
+      showAuthGate("NCPD terminal profiles are read-only. Ask an administrator to set your agent name.", {
+        allowSignOut: true
+      });
+      return;
+    }
     agentNameInputEl.value = "";
     showAuthGate("Set your in-character agent name to request terminal access.", {
       allowSignOut: true,
@@ -381,7 +395,6 @@ async function activateSession(session) {
     return;
   }
 
-  currentProfile = profile;
   authGateEl.hidden = true;
   terminalAppEl.hidden = false;
 
@@ -390,6 +403,10 @@ async function activateSession(session) {
 
 async function saveAgentName(event) {
   event.preventDefault();
+  if (isReadOnlyRank(currentProfile?.rank)) {
+    authMessageEl.textContent = "NCPD terminal profiles are read-only. Ask an administrator to set your agent name.";
+    return;
+  }
   const agentName = agentNameInputEl.value.trim();
   const userId = activeUserId;
   if (!userId) return;

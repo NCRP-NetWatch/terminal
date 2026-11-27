@@ -1,4 +1,6 @@
 const RANKS = new Map([
+  ["ncpd command", { badgeId: null, level: 0 }],
+  ["ncpd detective", { badgeId: null, level: 0 }],
   ["section chief", { badgeId: "section-chief", level: 6 }],
   ["supervisor", { badgeId: "supervisor", level: 5 }],
   ["senior agent", { badgeId: "senior-agent", level: 4 }],
@@ -8,7 +10,7 @@ const RANKS = new Map([
 ]);
 
 export const RANK_LABELS = [...RANKS.keys()].map((rank) =>
-  rank.replace(/\b\w/g, (character) => character.toUpperCase())
+  formatRank(rank)
 );
 
 export function normalizeRank(rank) {
@@ -29,8 +31,18 @@ export function isAuthorizedRank(rank) {
   return RANKS.has(normalizeRank(rank));
 }
 
+export function isReadOnlyRank(rank) {
+  return ["ncpd command", "ncpd detective"].includes(normalizeRank(rank));
+}
+
+export function isTraceOnlyRank(rank) {
+  return normalizeRank(rank) === "ncpd detective";
+}
+
 export function formatRank(rank) {
   const normalized = normalizeRank(rank);
   if (normalized === "ncrp staff") return "NCRP Staff";
+  if (normalized === "ncpd command") return "NCPD Command";
+  if (normalized === "ncpd detective") return "NCPD Detective";
   return normalized.replace(/\b\w/g, (character) => character.toUpperCase());
 }

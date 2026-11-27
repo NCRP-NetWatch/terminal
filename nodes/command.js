@@ -3,7 +3,7 @@ import { getRankLevel, normalizeRank, RANK_LABELS } from "./ranks.js";
 import { getWorldFiscalYear } from "./dates.js";
 import { aggregateBudgetRows, getAuditTrail, getOpenCommitments, isInitialDeposit, validateLedgerBatch } from "./budget-ledger.js";
 
-export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl, purchaseContentEl, entryContentEl, notesDialogEl, notesTitleEl, notesListEl, closeNotesEl, activeNodeNames = [], getSupabaseClient, getCurrentProfile }) {
+export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl, purchaseContentEl, entryContentEl, notesDialogEl, notesTitleEl, notesListEl, closeNotesEl, activeNodeNames = [], getSupabaseClient, getCurrentProfile, isReadOnly = () => false }) {
   let profiles = [];
   let ledgerRows=[]; let activeView="access-manager";
   const budgetBody=budgetContentEl.querySelector("[data-budget-body]"),budgetStatus=budgetContentEl.querySelector("[data-budget-status]"),fundFilter=budgetContentEl.querySelector("[data-budget-fund]"),search=budgetContentEl.querySelector("[data-budget-search]"),sort=budgetContentEl.querySelector("[data-budget-sort]"),totals=budgetContentEl.querySelector("[data-budget-totals]");
@@ -64,7 +64,7 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
       rankCell.append(rankSelect);
 
       const actionCell = document.createElement("td");
-      const canEdit = actorLevel > targetLevel && targetLevel >= 0;
+      const canEdit = !isReadOnly() && actorLevel > targetLevel && targetLevel > 0;
       rankSelect.disabled = !canEdit;
       if (canEdit) {
         const saveButton = document.createElement("button");
@@ -251,6 +251,7 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
   }
   async function submitBatch(event) {
     event.preventDefault();
+    if (isReadOnly()) return;
     const entries=Array.from(entryRows.querySelectorAll("tr"))
       .map(tr=>Object.fromEntries(Array.from(tr.querySelectorAll("[name]")).map(el=>[el.name,el.value])))
       .filter(entry=>["fund_code","entry_type","amount"].some(key=>String(entry[key]||"").trim()));
@@ -266,6 +267,7 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
   }
   async function submitPurchase(event) {
     event.preventDefault();
+    if (isReadOnly()) return;
     const action=purchaseAction.value, amount=Number(purchaseAmount.value), reason=purchaseReason.value.trim();
     const year=getWorldFiscalYear();
     if(!Number.isFinite(amount)||amount<=0){purchaseMessage.textContent="Enter an amount greater than zero.";return;}
@@ -304,7 +306,7 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
       purchaseForm.reset();renderSuggestions();
     });
   }
-  function switchView(id){activeView=id;contentEl.hidden=id!=="access-manager";budgetContentEl.hidden=id!=="budget-ledger";purchaseContentEl.hidden=id!=="purchase-form";entryContentEl.hidden=id!=="modify-budget";if(id==="budget-ledger")renderBudget();}
+  function switchView(id){const available=isReadOnly()?["access-manager","budget-ledger"]:["access-manager","budget-ledger","purchase-form","modify-budget"];if(!available.includes(id))id="access-manager";activeView=id;contentEl.hidden=id!=="access-manager";budgetContentEl.hidden=id!=="budget-ledger";purchaseContentEl.hidden=id!=="purchase-form";entryContentEl.hidden=id!=="modify-budget";if(id==="budget-ledger")renderBudget();}
   fundFilter.addEventListener("input",renderBudget);search.addEventListener("input",renderBudget);sort.addEventListener("change",renderBudget);addRow.addEventListener("click",()=>entryRows.append(createEntryRow()));entryForm.addEventListener("submit",event=>void submitBatch(event));purchaseForm.addEventListener("submit",event=>void submitPurchase(event));purchaseAction.addEventListener("change",()=>{purchaseAmount.value="";updatePurchaseFields();});purchaseFund.addEventListener("change",()=>{const node=purchaseNodeForFund(purchaseFund.value);if(node)purchaseNode.value=node;updatePurchaseSummary();});purchaseNode.addEventListener("change",updatePurchaseSummary);purchaseObject.addEventListener("input",updatePurchaseSummary);purchaseAmount.addEventListener("input",updatePurchaseSummary);openPurchase.addEventListener("change",()=>{const purchase=getOpenPurchase(openPurchase.value);purchaseAmount.value=purchase?String(purchase.open_amount):"";updatePurchaseFields();});closeNotesEl.addEventListener("click",()=>notesDialogEl.close());
 
   async function loadProfiles() {
@@ -320,6 +322,7 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
   }
 
   async function saveRank(profile, rankSelect, saveButton) {
+    if (isReadOnly()) return;
     const actorLevel = getRankLevel(getCurrentProfile()?.rank);
     const targetLevel = getRankLevel(profile.rank);
     if (targetLevel < 0 || targetLevel >= actorLevel) return;
@@ -374,7 +377,7 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
       if (!profiles.length) { ledgerRows = []; subNavEl.replaceChildren(); viewEl.hidden = true; contentEl.hidden = true; budgetContentEl.hidden = true; purchaseContentEl.hidden = true; entryContentEl.hidden = true; return; }
       renderProfiles();
     },
-    show() {viewEl.hidden=false;renderNavButtons(subNavEl,[{id:"access-manager",label:"ACCESS MANAGER"},{id:"budget-ledger",label:"BUDGET LEDGER"},{id:"purchase-form",label:"BUDGET FORM"},{id:"modify-budget",label:"MODIFY BUDGET"}],{activeId:activeView,onSelect:switchView});switchView(activeView);},
+    show() {viewEl.hidden=false;const panels=[{id:"access-manager",label:"ACCESS MANAGER"},{id:"budget-ledger",label:"BUDGET LEDGER"},{id:"purchase-form",label:"BUDGET FORM"},{id:"modify-budget",label:"MODIFY BUDGET"}].filter((panel)=>!isReadOnly()||["access-manager","budget-ledger"].includes(panel.id));renderNavButtons(subNavEl,panels,{activeId:activeView,onSelect:switchView});switchView(activeView);},
     hide() {viewEl.hidden=true;subNavEl.replaceChildren();if(notesDialogEl.open)notesDialogEl.close();}
   };
 }

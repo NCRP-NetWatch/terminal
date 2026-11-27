@@ -1,27 +1,24 @@
 import { renderNavButtons } from "./navigation.js";
 import { getRankLevel, normalizeRank, RANK_LABELS } from "./ranks.js";
 import { getWorldFiscalYear } from "./dates.js";
-import { aggregateBudgetRows, getAuditTrail, isInitialDeposit, validateLedgerBatch } from "./budget-ledger.js";
+import { aggregateBudgetRows, getAuditTrail, getOpenCommitments, isInitialDeposit, validateLedgerBatch } from "./budget-ledger.js";
 
-export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl, entryContentEl, notesDialogEl, notesTitleEl, notesListEl, closeNotesEl, activeNodeNames = [], getSupabaseClient, getCurrentProfile }) {
+export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl, purchaseContentEl, entryContentEl, notesDialogEl, notesTitleEl, notesListEl, closeNotesEl, activeNodeNames = [], getSupabaseClient, getCurrentProfile }) {
   let profiles = [];
   let ledgerRows=[]; let activeView="access-manager";
   const budgetBody=budgetContentEl.querySelector("[data-budget-body]"),budgetStatus=budgetContentEl.querySelector("[data-budget-status]"),fundFilter=budgetContentEl.querySelector("[data-budget-fund]"),search=budgetContentEl.querySelector("[data-budget-search]"),sort=budgetContentEl.querySelector("[data-budget-sort]"),totals=budgetContentEl.querySelector("[data-budget-totals]");
   const entryRows=entryContentEl.querySelector("[data-ledger-entry-rows]"),entryMessage=entryContentEl.querySelector("[data-ledger-entry-message]"),addRow=entryContentEl.querySelector("[data-add-ledger-row]"),entryForm=entryContentEl.querySelector("[data-ledger-entry-form]");
-  const lists={fund_code:entryContentEl.querySelector("#budgetFundSuggestions"),division:entryContentEl.querySelector("#budgetDivisionSuggestions"),object_code:entryContentEl.querySelector("#budgetObjectSuggestions"),ref_id:entryContentEl.querySelector("#budgetRefSuggestions")};
+  const purchaseForm=purchaseContentEl.querySelector("[data-purchase-form]"),purchaseAction=purchaseForm.querySelector("[data-purchase-action]"),newPurchaseFields=purchaseForm.querySelector("[data-new-purchase-fields]"),existingPurchaseField=purchaseForm.querySelector("[data-existing-purchase-field]"),purchaseFund=purchaseForm.querySelector("[data-purchase-fund]"),purchaseNode=purchaseForm.querySelector("[data-purchase-node]"),purchaseObject=purchaseForm.querySelector("[data-purchase-object]"),openPurchase=purchaseForm.querySelector("[data-purchase-open]"),purchaseAmount=purchaseForm.querySelector("[data-purchase-amount]"),purchaseReason=purchaseForm.querySelector("[data-purchase-reason]"),purchaseSummary=purchaseForm.querySelector("[data-purchase-summary]"),purchaseMessage=purchaseForm.querySelector("[data-purchase-message]"),purchaseSubmit=purchaseForm.querySelector("[data-purchase-submit]");
+  const lists={fund_code:entryContentEl.querySelector("#budgetFundSuggestions"),object_code:purchaseForm.querySelector("#budgetObjectSuggestions")};
   const amountFormat=new Intl.NumberFormat(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
   const formatAmount=value=>"€$"+amountFormat.format(value);
   const entryTypes=[
     {value:"INITIAL_DEPOSIT",label:"Initial deposit"},
-    {value:"ACTUAL",label:"Set actual cash on hand"},
-    {value:"ENCUMBRANCE",label:"Record encumbrance"},
-    {value:"LIQUIDATION",label:"Release encumbrance"}
+    {value:"ACTUAL",label:"Set cash balance"}
   ];
   const entryGuidance={
-    INITIAL_DEPOSIT:"Sets this fund's original starter budget and opening actual cash balance. Only the first initial deposit is used.",
-    ACTUAL:"Sets the raw total cash currently held by this fund. Enter the balance before subtracting encumbrances.",
-    ENCUMBRANCE:"Records a promised purchase amount against a NODE, object code, and reference ID.",
-    LIQUIDATION:"Releases all or part of a paid or canceled commitment. Enter its reference ID."
+    INITIAL_DEPOSIT:"Starts this Fund's budget and cash balance.",
+    ACTUAL:"Set the current cash balance before open commitments are deducted."
   };
   const cell=v=>{const td=document.createElement("td");td.textContent=v;return td;};
 
@@ -109,13 +106,13 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
   }
   function openAudit(selection) {
     const trail=getAuditTrail(ledgerRows,selection);
-    const scope=[selection.fiscalYear?"FY "+selection.fiscalYear:"",selection.fundCode?"FUND "+selection.fundCode:"",selection.division?"NODE "+selection.division:"",selection.objectCode?"OBJCODE "+selection.objectCode:"",selection.refId?"REF "+selection.refId:""].filter(Boolean).join(" / ");
+    const scope=[selection.fiscalYear?"FY "+selection.fiscalYear:"",selection.fundCode?"FUND "+selection.fundCode:"",selection.division?"NODE "+selection.division:"",selection.objectCode?"OBJCODE "+selection.objectCode:"",selection.purchaseId?"PURCHASE "+selection.purchaseId:""].filter(Boolean).join(" / ");
     notesTitleEl.textContent="BUDGET AUDIT // "+(scope||"ALL ENTRIES");
-    notesListEl.replaceChildren(...trail.map(r=>{const li=document.createElement("li"),title=document.createElement("strong"),memo=document.createElement("span"),meta=document.createElement("time");title.textContent=(isInitialDeposit(r)?"INITIAL DEPOSIT":r.entry_type==="ACTUAL"?"ACTUAL BALANCE":r.entry_type)+" — "+formatAmount(Number(r.amount));memo.className="note-meta";memo.textContent=(r.memo||"").replace(/^\[INITIAL DEPOSIT\]\s*/i,"")||"No reason recorded.";meta.className="note-meta";meta.dateTime=r.created_at||"";const p=profiles.find(x=>x.user_id===r.recorded_by),actor=p&&p.agent_name&&p.agent_name.trim()||(isInitialDeposit(r)&&!r.recorded_by?"SYSTEM":"Unknown agent");meta.textContent=(r.created_at?new Date(r.created_at).toLocaleString():"Unknown date")+" · "+actor+" · FY "+r.fiscal_year+(r.division||r.object_code?" · "+[r.division,r.object_code].filter(Boolean).join(" / "):"")+(r.ref_id?" · "+r.ref_id:"");li.append(title,memo,meta);return li;}));
+    notesListEl.replaceChildren(...trail.map(r=>{const li=document.createElement("li"),title=document.createElement("strong"),memo=document.createElement("span"),meta=document.createElement("time");title.textContent=(isInitialDeposit(r)?"INITIAL DEPOSIT":r.entry_type==="ACTUAL"?"CASH BALANCE":r.entry_type)+" — "+formatAmount(Number(r.amount));memo.className="note-meta";memo.textContent=(r.memo||"").replace(/^\[INITIAL DEPOSIT\]\s*/i,"")||"No reason recorded.";meta.className="note-meta";meta.dateTime=r.created_at||"";const p=profiles.find(x=>x.user_id===r.recorded_by),actor=p&&p.agent_name&&p.agent_name.trim()||(isInitialDeposit(r)&&!r.recorded_by?"SYSTEM":"Unknown agent");meta.textContent=(r.created_at?new Date(r.created_at).toLocaleString():"Unknown date")+" · "+actor+" · FY "+r.fiscal_year+(r.division||r.object_code?" · "+[r.division,r.object_code].filter(Boolean).join(" / "):"")+(r.ref_id?" · "+(r.entry_type==="CREDIT"?"CREDIT ID ":"PURCHASE ID ")+r.ref_id:"");li.append(title,memo,meta);return li;}));
     if(!trail.length){const li=document.createElement("li");li.textContent="No audit entries found.";notesListEl.append(li);}if(!notesDialogEl.open)notesDialogEl.showModal();
   }
   function createEntryRow(values={}) {
-    const tr=document.createElement("tr"), specs=[["fiscal_year","number","Fiscal year"],["fund_code","text","Fund"],["division","text","NODE"],["object_code","text","OBJCODE"],["ref_id","text","Ref ID"],["entry_type","select","Budget action"],["amount","number","Amount"],["memo","text","Reason"]];
+    const tr=document.createElement("tr"), specs=[["fiscal_year","number","Fiscal year"],["fund_code","text","Fund"],["entry_type","select","Budget action"],["amount","number","Amount"],["memo","text","Reason"]];
     for(const [name,type,label] of specs){
       const td=document.createElement("td");let input;let guidance;
       if(type==="select"){
@@ -125,28 +122,87 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
       }else{
         input=document.createElement("input");input.type=type;input.required=false;
         if(type==="number"){input.step=name==="amount"?"0.01":"1";if(name==="amount")input.inputMode="decimal";}
-        if(lists[name])input.setAttribute("list",lists[name].id);
+        if(name==="fund_code")input.setAttribute("list",lists.fund_code.id);
       }
       input.name=name;input.setAttribute("aria-label",label);input.value=values[name]|| (name==="fiscal_year"?String(getWorldFiscalYear()):"");
       if(name==="memo"){input.required=true;input.maxLength=500;input.placeholder="Reason for entry";}
       td.append(input);if(guidance)td.append(guidance);tr.append(td);
     }
-    const typeInput=tr.querySelector('[name="entry_type"]'),amountInput=tr.querySelector('[name="amount"]'),fundInput=tr.querySelector('[name="fund_code"]'),divisionInput=tr.querySelector('[name="division"]'),objectInput=tr.querySelector('[name="object_code"]'),refInput=tr.querySelector('[name="ref_id"]'),memoInput=tr.querySelector('[name="memo"]'),guidance=typeInput.parentElement.querySelector(".ledger-entry-guidance");
+    const typeInput=tr.querySelector('[name="entry_type"]'),amountInput=tr.querySelector('[name="amount"]'),memoInput=tr.querySelector('[name="memo"]'),guidance=typeInput.parentElement.querySelector(".ledger-entry-guidance");
     const updateEntryGuidance=()=>{
-      const isInitial=typeInput.value==="INITIAL_DEPOSIT",isActual=typeInput.value==="ACTUAL",isCommitment=["ENCUMBRANCE","LIQUIDATION"].includes(typeInput.value);
+      const isInitial=typeInput.value==="INITIAL_DEPOSIT",isActual=typeInput.value==="ACTUAL";
       amountInput.setAttribute("aria-label",isActual?"Raw actual cash balance (€$)":isInitial?"Initial deposit (€$)":"Amount (€$)");amountInput.placeholder=isActual?"Raw cash balance (€$)":isInitial?"Initial deposit (€$)":"Amount (€$)";amountInput.min="0";
       memoInput.maxLength=isInitial?480:500;
-      for(const input of [divisionInput,objectInput,refInput]){input.disabled=!isCommitment; if(!isCommitment)input.value="";}
       guidance.textContent=entryGuidance[typeInput.value]||"Choose a budget action.";
     };
-    typeInput.addEventListener("change",updateEntryGuidance);fundInput.addEventListener("input",()=>{if(typeInput.value==="INITIAL_DEPOSIT")updateEntryGuidance();});fundInput.addEventListener("change",()=>{if(typeInput.value==="INITIAL_DEPOSIT")updateEntryGuidance();});updateEntryGuidance();
+    typeInput.addEventListener("change",updateEntryGuidance);updateEntryGuidance();
     const td=document.createElement("td"),remove=document.createElement("button");remove.type="button";remove.textContent="Remove";remove.addEventListener("click",()=>{if(entryRows.children.length>1)tr.remove();});td.append(remove);tr.append(td);return tr;
   }
+  function getFundSummary(fundCode) {
+    return aggregateBudgetRows(ledgerRows).rows.find((row) => row.fund_code === fundCode);
+  }
+  function getOpenPurchase(purchaseRowId) {
+    return getOpenCommitments(ledgerRows).find((purchase) => purchase.id === purchaseRowId);
+  }
+  function updatePurchaseSummary() {
+    const action=purchaseAction.value, amount=Number(purchaseAmount.value);
+    if(["pay","cancel"].includes(action)){
+      const purchase=getOpenPurchase(openPurchase.value), fund=purchase&&getFundSummary(purchase.fund_code);
+      const exceeds=purchase&&Number.isFinite(amount)&&(amount>purchase.open_amount||(action==="pay"&&amount>(fund?.actuals||0)));
+      purchaseSummary.textContent=purchase?"Purchase ID "+purchase.ref_id+" · Open "+formatAmount(purchase.open_amount)+" · Cash "+formatAmount(fund?.actuals||0)+(exceeds?" · Amount exceeds balance":""):"Select an open purchase.";
+      return;
+    }
+    const fund=getFundSummary(purchaseFund.value);
+    if(!fund){purchaseSummary.textContent="Select a Fund with an initial deposit.";return;}
+    const balanceLabel=action==="credit"?"Cash":"Available";
+    const balance=action==="credit"?fund.actuals:fund.available;
+    const exceeds=["commit","payNow"].includes(action)&&Number.isFinite(amount)&&amount>fund.available;
+    purchaseSummary.textContent=balanceLabel+" "+formatAmount(balance||0)+(exceeds?" · Amount exceeds balance":"");
+  }
+  function updatePurchaseFields() {
+    const usesOpenPurchase=["pay","cancel"].includes(purchaseAction.value);
+    newPurchaseFields.hidden=usesOpenPurchase;
+    existingPurchaseField.hidden=!usesOpenPurchase;
+    for(const input of newPurchaseFields.querySelectorAll("input,select")){
+      input.disabled=usesOpenPurchase;
+      input.required=!usesOpenPurchase;
+    }
+    openPurchase.disabled=!usesOpenPurchase;
+    openPurchase.required=usesOpenPurchase;
+    purchaseSubmit.textContent=purchaseAction.options[purchaseAction.selectedIndex].textContent;
+    purchaseSubmit.disabled=usesOpenPurchase&&!openPurchase.value;
+    updatePurchaseSummary();
+  }
   function renderSuggestions() {
-    const values={fund_code:new Set(),division:new Set(activeNodeNames),object_code:new Set(),ref_id:new Set()}, open=new Map();
-    for(const r of ledgerRows){if(r.fund_code)values.fund_code.add(r.fund_code);if(r.division)values.division.add(r.division);if(r.object_code)values.object_code.add(r.object_code);if(r.ref_id){const k=[r.fiscal_year,r.fund_code,r.division,r.object_code,r.ref_id].join("::");open.set(k,(open.get(k)||0)+(r.entry_type==="ENCUMBRANCE"?Number(r.amount):r.entry_type==="LIQUIDATION"?-Number(r.amount):0));}}
-    for(const [k,v] of open)if(v>0)values.ref_id.add(k.split("::").pop());
-    for(const [key,list] of Object.entries(lists))list.replaceChildren(...Array.from(values[key]).sort().map(v=>{const option=document.createElement("option");option.value=v;return option;}));
+    const values={fund_code:new Set(),object_code:new Set()};
+    for(const row of ledgerRows){
+      if(row.fund_code)values.fund_code.add(row.fund_code);
+      if(row.object_code)values.object_code.add(row.object_code);
+    }
+    for(const [key,list] of Object.entries(lists)){
+      list.replaceChildren(...[...values[key]].sort().map((value)=>{
+        const option=document.createElement("option");option.value=value;return option;
+      }));
+    }
+
+    const previousFund=purchaseFund.value;
+    const funds=aggregateBudgetRows(ledgerRows).rows.filter((row)=>row.status!=="NO INITIAL DEPOSIT");
+    purchaseFund.replaceChildren(new Option("Choose Fund",""),...funds.map((fund)=>new Option(fund.fund_code+" · "+(fund.node||"NODE unassigned"),fund.fund_code)));
+    if(funds.some((fund)=>fund.fund_code===previousFund))purchaseFund.value=previousFund;
+
+    const nodes=[...new Set([...activeNodeNames,...ledgerRows.map((row)=>row.division).filter(Boolean)])].sort();
+    const selectedNode=purchaseNode.value;
+    purchaseNode.replaceChildren(new Option("Choose NODE",""),...nodes.map((node)=>new Option(node,node)));
+    if(nodes.includes(selectedNode))purchaseNode.value=selectedNode;
+
+    const selectedPurchaseId=openPurchase.value;
+    const openPurchases=getOpenCommitments(ledgerRows);
+    openPurchase.replaceChildren(new Option("Choose Purchase ID",""),...openPurchases.map((purchase)=>new Option(
+      purchase.ref_id+" · "+purchase.fund_code+" · "+(purchase.division||"NODE")+" / "+(purchase.object_code||"OBJCODE")+" · Open "+formatAmount(purchase.open_amount),
+      purchase.id
+    )));
+    if(openPurchases.some((purchase)=>purchase.id===selectedPurchaseId))openPurchase.value=selectedPurchaseId;
+    updatePurchaseFields();
   }
   async function loadLedger() {
     const {data,error}=await getSupabaseClient().from("command_budget_ledger").select("id, created_at, fiscal_year, fund_code, division, object_code, ref_id, entry_type, amount, memo, recorded_by").order("created_at",{ascending:true});if(error)throw error;ledgerRows=data||[];renderSuggestions();if(activeView==="budget-ledger")renderBudget();
@@ -155,27 +211,21 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
     const {error}=await getSupabaseClient().functions.invoke("command-budget-discord-notify",{body:{ledger_ids:ledgerIds}});
     if(error)throw error;
   }
-  function showNotificationRetry(ledgerIds, count) {
-    entryMessage.textContent=count+" posted. Discord notification could not be sent. ";
+  function showNotificationRetry(messageElement, ledgerIds, successText) {
+    messageElement.textContent=successText+" Discord notification could not be sent. ";
     const retry=document.createElement("button");retry.type="button";retry.textContent="Retry notification";
     retry.addEventListener("click",async()=>{
       retry.disabled=true;
-      try{await sendBudgetNotification(ledgerIds);entryMessage.textContent=count+" posted. Discord notification sent.";}
-      catch{retry.disabled=false;entryMessage.textContent=count+" posted. Discord notification could not be sent. ";entryMessage.append(retry);}
+      try{await sendBudgetNotification(ledgerIds);messageElement.textContent=successText+" Discord notification sent.";}
+      catch{retry.disabled=false;messageElement.textContent=successText+" Discord notification could not be sent. ";messageElement.append(retry);}
     });
-    entryMessage.append(retry);
+    messageElement.append(retry);
   }
-  async function submitBatch(event) {
-    event.preventDefault();
-    const entries=Array.from(entryRows.querySelectorAll("tr"))
-      .map(tr=>Object.fromEntries(Array.from(tr.querySelectorAll("[name]")).map(el=>[el.name,el.value])))
-      .filter(entry=>["fund_code","division","object_code","ref_id","entry_type","amount"].some(key=>String(entry[key]||"").trim()));
-    if(!entries.length){entryMessage.textContent="Add at least one budget entry before posting.";return;}
-
+  async function postLedgerEntries(entries, messageElement, button, successText, afterPost) {
     const validation=validateLedgerBatch(entries,ledgerRows,activeNodeNames);
-    if(!validation.valid){entryMessage.textContent=validation.errors.join(" ");return;}
+    if(!validation.valid){messageElement.textContent=validation.errors.join(" ");return false;}
     const profile=getCurrentProfile(),userId=profile&&profile.user_id;
-    if(!userId){entryMessage.textContent="Your authenticated profile could not be identified.";return;}
+    if(!userId){messageElement.textContent="Your authenticated profile could not be identified.";return false;}
 
     const batch=validation.entries.map(entry=>({
       id:crypto.randomUUID(),
@@ -184,19 +234,70 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
       memo:entry.entry_type==="INITIAL_DEPOSIT"?"[INITIAL DEPOSIT] "+entry.memo:entry.memo,
       recorded_by:userId
     }));
-    const button=entryForm.querySelector("[type=submit]");button.disabled=true;entryMessage.textContent="Posting ledger batch…";
+    button.disabled=true;messageElement.textContent="Posting…";
     try{
       const {error}=await getSupabaseClient().from("command_budget_ledger").insert(batch);
       if(error)throw error;
-      await loadLedger();entryRows.replaceChildren(createEntryRow());
-      const count=batch.length+" entr"+(batch.length===1?"y":"ies");
-      try{await sendBudgetNotification(batch.map(entry=>entry.id));entryMessage.textContent=count+" posted. Discord notification sent.";}
-      catch{showNotificationRetry(batch.map(entry=>entry.id),count);}
-    }catch(error){entryMessage.textContent="Could not post ledger batch. "+(error.message||"Try again.");}
+      await loadLedger();
+      afterPost?.(batch);
+      try{await sendBudgetNotification(batch.map(entry=>entry.id));messageElement.textContent=successText+" Discord notification sent.";}
+      catch{showNotificationRetry(messageElement,batch.map(entry=>entry.id),successText);}
+      return true;
+    }catch(error){messageElement.textContent="Could not post. "+(error.message||"Try again.");return false;}
     finally{button.disabled=false;}
   }
-  function switchView(id){activeView=id;contentEl.hidden=id!=="access-manager";budgetContentEl.hidden=id!=="budget-ledger";entryContentEl.hidden=id!=="post-ledger-entry";if(id==="budget-ledger")renderBudget();}
-  fundFilter.addEventListener("input",renderBudget);search.addEventListener("input",renderBudget);sort.addEventListener("change",renderBudget);addRow.addEventListener("click",()=>entryRows.append(createEntryRow()));entryForm.addEventListener("submit",event=>void submitBatch(event));closeNotesEl.addEventListener("click",()=>notesDialogEl.close());
+  async function submitBatch(event) {
+    event.preventDefault();
+    const entries=Array.from(entryRows.querySelectorAll("tr"))
+      .map(tr=>Object.fromEntries(Array.from(tr.querySelectorAll("[name]")).map(el=>[el.name,el.value])))
+      .filter(entry=>["fund_code","entry_type","amount"].some(key=>String(entry[key]||"").trim()));
+    if(!entries.length){entryMessage.textContent="Add at least one entry.";return;}
+    const count=entries.length+" entr"+(entries.length===1?"y":"ies");
+    await postLedgerEntries(entries,entryMessage,entryForm.querySelector("[type=submit]"),count+" posted.",()=>entryRows.replaceChildren(createEntryRow()));
+  }
+  function purchaseNodeForFund(fundCode) {
+    return ledgerRows.find((row)=>isInitialDeposit(row)&&String(row.fund_code).toUpperCase()===fundCode)?.division||"";
+  }
+  function createPurchaseId(prefix="P") {
+    return prefix+"-"+getWorldFiscalYear()+"-"+crypto.randomUUID().replace(/-/g,"").slice(0,8).toUpperCase();
+  }
+  async function submitPurchase(event) {
+    event.preventDefault();
+    const action=purchaseAction.value, amount=Number(purchaseAmount.value), reason=purchaseReason.value.trim();
+    const year=getWorldFiscalYear();
+    if(!Number.isFinite(amount)||amount<=0){purchaseMessage.textContent="Enter an amount greater than zero.";return;}
+    if(!reason){purchaseMessage.textContent="Enter a reason.";return;}
+    let entries=[], successText="";
+    if(["pay","cancel"].includes(action)){
+      const purchase=getOpenPurchase(openPurchase.value), fund=purchase&&getFundSummary(purchase.fund_code);
+      if(!purchase||!fund){purchaseMessage.textContent="Choose an open Purchase ID.";return;}
+      if(amount>purchase.open_amount){purchaseMessage.textContent="Amount exceeds the open purchase balance.";return;}
+      const release={fiscal_year:year,fund_code:purchase.fund_code,division:purchase.division,object_code:purchase.object_code,ref_id:purchase.ref_id,entry_type:"LIQUIDATION",amount,memo:reason};
+      if(action==="pay"){
+        if(amount>fund.actuals){purchaseMessage.textContent="Amount exceeds the Fund's cash balance.";return;}
+        entries=[release,{...release,entry_type:"PURCHASE",memo:reason}];
+        successText="Payment recorded for Purchase ID "+purchase.ref_id+".";
+      }else{
+        entries=[release];successText="Commitment released for Purchase ID "+purchase.ref_id+".";
+      }
+    }else{
+      const fund=getFundSummary(purchaseFund.value),node=purchaseNode.value,objectCode=purchaseObject.value.trim();
+      if(!fund){purchaseMessage.textContent="Choose a Fund with an initial deposit.";return;}
+      if(!node||!objectCode){purchaseMessage.textContent="Choose a NODE and OBJCODE.";return;}
+      if(["commit","payNow"].includes(action)&&amount>fund.available){purchaseMessage.textContent="Amount exceeds the Fund's available balance.";return;}
+      if(action==="credit"&&amount<=0){purchaseMessage.textContent="Enter a credit greater than zero.";return;}
+      const purchaseId=createPurchaseId(action==="credit"?"C":"P");
+      const entry={id:crypto.randomUUID(),fiscal_year:year,fund_code:fund.fund_code,division:node,object_code:objectCode,ref_id:purchaseId,amount,memo:reason};
+      entry.entry_type={commit:"ENCUMBRANCE",payNow:"PURCHASE",credit:"CREDIT"}[action];
+      entries=[entry];
+      successText=(action==="commit"?"Purchase held":action==="payNow"?"Purchase paid":"Credit recorded")+" · "+(action==="credit"?"Credit ID ":"Purchase ID ")+purchaseId+".";
+    }
+    await postLedgerEntries(entries,purchaseMessage,purchaseSubmit,successText,()=>{
+      purchaseForm.reset();renderSuggestions();
+    });
+  }
+  function switchView(id){activeView=id;contentEl.hidden=id!=="access-manager";budgetContentEl.hidden=id!=="budget-ledger";purchaseContentEl.hidden=id!=="purchase-form";entryContentEl.hidden=id!=="modify-budget";if(id==="budget-ledger")renderBudget();}
+  fundFilter.addEventListener("input",renderBudget);search.addEventListener("input",renderBudget);sort.addEventListener("change",renderBudget);addRow.addEventListener("click",()=>entryRows.append(createEntryRow()));entryForm.addEventListener("submit",event=>void submitBatch(event));purchaseForm.addEventListener("submit",event=>void submitPurchase(event));purchaseAction.addEventListener("change",()=>{purchaseAmount.value="";updatePurchaseFields();});purchaseFund.addEventListener("change",()=>{const node=purchaseNodeForFund(purchaseFund.value);if(node)purchaseNode.value=node;updatePurchaseSummary();});purchaseNode.addEventListener("change",updatePurchaseSummary);purchaseObject.addEventListener("input",updatePurchaseSummary);purchaseAmount.addEventListener("input",updatePurchaseSummary);openPurchase.addEventListener("change",()=>{const purchase=getOpenPurchase(openPurchase.value);purchaseAmount.value=purchase?String(purchase.open_amount):"";updatePurchaseFields();});closeNotesEl.addEventListener("click",()=>notesDialogEl.close());
 
   async function loadProfiles() {
     setStatus("Loading personnel…");
@@ -262,10 +363,10 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
     },
     setData(data) {
       profiles = Array.isArray(data) ? data : [];
-      if (!profiles.length) { ledgerRows = []; subNavEl.replaceChildren(); viewEl.hidden = true; contentEl.hidden = true; budgetContentEl.hidden = true; entryContentEl.hidden = true; return; }
+      if (!profiles.length) { ledgerRows = []; subNavEl.replaceChildren(); viewEl.hidden = true; contentEl.hidden = true; budgetContentEl.hidden = true; purchaseContentEl.hidden = true; entryContentEl.hidden = true; return; }
       renderProfiles();
     },
-    show() {viewEl.hidden=false;renderNavButtons(subNavEl,[{id:"access-manager",label:"ACCESS MANAGER"},{id:"budget-ledger",label:"BUDGET LEDGER"},{id:"post-ledger-entry",label:"POST LEDGER ENTRY"}],{activeId:activeView,onSelect:switchView});switchView(activeView);},
+    show() {viewEl.hidden=false;renderNavButtons(subNavEl,[{id:"access-manager",label:"ACCESS MANAGER"},{id:"budget-ledger",label:"BUDGET LEDGER"},{id:"purchase-form",label:"PURCHASE FORM"},{id:"modify-budget",label:"MODIFY BUDGET"}],{activeId:activeView,onSelect:switchView});switchView(activeView);},
     hide() {viewEl.hidden=true;subNavEl.replaceChildren();if(notesDialogEl.open)notesDialogEl.close();}
   };
 }

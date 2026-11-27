@@ -111,7 +111,7 @@ Deno.serve(async (request) => {
         `Amount: ${money(entry.amount)}`,
         entry.division ? `NODE: ${escapeDiscordText(entry.division, 70)}` : "",
         entry.object_code ? `OBJCODE: ${escapeDiscordText(entry.object_code, 60)}` : "",
-        entry.ref_id ? `Ref: ${escapeDiscordText(entry.ref_id, 60)}` : "",
+        entry.ref_id ? `${entry.entry_type === "CREDIT" ? "Credit ID" : "Purchase ID"}: ${escapeDiscordText(entry.ref_id, 60)}` : "",
         entry.memo ? `Memo: ${escapeDiscordText(entry.memo, 150)}` : ""
       ].filter(Boolean).join("\n");
       return { name: title.slice(0, 256), value: details.slice(0, 1024), inline: false };

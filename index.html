@@ -211,11 +211,33 @@
         <p data-budget-totals aria-live="polite"></p><p class="trace-recorder-message" data-budget-status role="status" aria-live="polite"></p>
         <div class="trace-recorder-table-wrap"><table aria-label="Fund budget rollup"><thead><tr><th>FUND</th><th>STARTER</th><th>NODE</th><th>OBJCODE</th><th>ENCUMBERED</th><th>ACTUALS</th><th>AVAILABLE</th><th>%USED</th></tr></thead><tbody data-budget-body></tbody></table></div>
       </section>
-      <section id="commandBudgetEntryContent" class="trace-recorder" hidden aria-labelledby="ledgerEntryTitle">
-        <div class="home-overview"><div class="home-welcome"><p class="home-kicker">COMMAND // APPEND-ONLY RECORDING</p><h2 id="ledgerEntryTitle" class="node-title">POST LEDGER ENTRY</h2></div></div>
-        <form data-ledger-entry-form><datalist id="budgetFundSuggestions"></datalist><datalist id="budgetDivisionSuggestions"></datalist><datalist id="budgetObjectSuggestions"></datalist><datalist id="budgetRefSuggestions"></datalist>
-          <div class="trace-recorder-table-wrap"><table class="trace-recorder-table" aria-label="Budget ledger entry batch"><thead><tr><th>Fiscal Year</th><th>Fund</th><th>NODE</th><th>OBJCODE</th><th>Ref ID</th><th>Budget Action</th><th>Amount (€$)</th><th>Reason</th><th>Action</th></tr></thead><tbody data-ledger-entry-rows></tbody></table></div>
-          <div class="trace-recorder-actions"><div class="trace-recorder-buttons"><button data-add-ledger-row type="button">Add row</button><button class="trace-submit" type="submit">Post batch</button></div></div><p class="trace-recorder-message" data-ledger-entry-message role="status" aria-live="polite"></p>
+      <section id="commandPurchaseContent" class="trace-recorder" hidden aria-labelledby="purchaseFormTitle">
+        <div class="home-overview"><div class="home-welcome"><p class="home-kicker">COMMAND // PURCHASES</p><h2 id="purchaseFormTitle" class="node-title">PURCHASE FORM</h2></div></div>
+        <form data-purchase-form>
+          <datalist id="budgetObjectSuggestions"></datalist>
+          <div class="db-controls">
+            <label class="db-sort-label">Action <select class="db-sort" data-purchase-action><option value="commit">Hold funds</option><option value="payNow">Record paid purchase</option><option value="pay">Pay open commitment</option><option value="cancel">Cancel open commitment</option><option value="credit">Refund / credit</option></select></label>
+            <div class="db-controls" data-new-purchase-fields>
+              <label class="db-sort-label">Fund <select class="db-sort" data-purchase-fund required></select></label>
+              <label class="db-sort-label">NODE <select class="db-sort" data-purchase-node required></select></label>
+              <label class="db-sort-label">OBJCODE <input class="db-sort" data-purchase-object list="budgetObjectSuggestions" required></label>
+            </div>
+            <div class="db-controls" data-existing-purchase-field hidden>
+              <label class="db-sort-label">Open Purchase <select class="db-sort" data-purchase-open></select></label>
+            </div>
+            <label class="db-sort-label">Amount (€$) <input class="db-sort" data-purchase-amount type="number" min="0.01" step="0.01" required></label>
+            <label class="db-sort-label">Reason <input class="db-search" data-purchase-reason maxlength="500" required></label>
+          </div>
+          <p data-purchase-summary role="status" aria-live="polite"></p>
+          <div class="trace-recorder-actions"><div class="trace-recorder-buttons"><button class="trace-submit" data-purchase-submit type="submit">Hold funds</button></div></div>
+          <p class="trace-recorder-message" data-purchase-message role="status" aria-live="polite"></p>
+        </form>
+      </section>
+      <section id="commandBudgetEntryContent" class="trace-recorder" hidden aria-labelledby="modifyBudgetTitle">
+        <div class="home-overview"><div class="home-welcome"><p class="home-kicker">COMMAND // BUDGET ADJUSTMENTS</p><h2 id="modifyBudgetTitle" class="node-title">MODIFY BUDGET</h2></div></div>
+        <form data-ledger-entry-form><datalist id="budgetFundSuggestions"></datalist>
+          <div class="trace-recorder-table-wrap"><table class="trace-recorder-table" aria-label="Modify budget"><thead><tr><th>Fiscal Year</th><th>Fund</th><th>Budget Action</th><th>Amount (€$)</th><th>Reason</th><th>Action</th></tr></thead><tbody data-ledger-entry-rows></tbody></table></div>
+          <div class="trace-recorder-actions"><div class="trace-recorder-buttons"><button data-add-ledger-row type="button">Add row</button><button class="trace-submit" type="submit">Save changes</button></div></div><p class="trace-recorder-message" data-ledger-entry-message role="status" aria-live="polite"></p>
         </form>
       </section>
     </section>

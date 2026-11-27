@@ -1,4 +1,4 @@
-const ENTRY_TYPES = new Set(["INITIAL_DEPOSIT", "ACTUAL", "ENCUMBRANCE", "LIQUIDATION"]);
+const ENTRY_TYPES = new Set(["INITIAL_DEPOSIT", "ACTUAL", "ENCUMBRANCE", "LIQUIDATION", "PURCHASE", "CREDIT"]);
 const cents = (amount) => Math.round((Number(amount) + Number.EPSILON) * 100);
 const dollars = (amount) => amount / 100;
 const amountCents = (row) => Number.isFinite(Number(row.amount)) ? cents(row.amount) : 0;
@@ -8,6 +8,27 @@ const INITIAL_DEPOSIT_MARKER = "[INITIAL DEPOSIT]";
 export function isInitialDeposit(row) {
   return row.entry_type === "APPROPRIATION"
     && String(row.memo ?? "").trim().toUpperCase().startsWith(INITIAL_DEPOSIT_MARKER);
+}
+
+const commitmentKey = (row) => [
+  String(row.fund_code ?? "").trim().toUpperCase(),
+  String(row.division ?? "").trim(),
+  String(row.object_code ?? "").trim(),
+  String(row.ref_id ?? "").trim()
+].join("::");
+
+export function getOpenCommitments(rows) {
+  const commitments = new Map();
+  for (const row of Array.isArray(rows) ? rows : []) {
+    if (!["ENCUMBRANCE", "LIQUIDATION"].includes(row.entry_type) || !row.ref_id) continue;
+    const key = commitmentKey(row);
+    const commitment = commitments.get(key) || { ...row, amountCents: 0 };
+    commitment.amountCents += row.entry_type === "ENCUMBRANCE" ? amountCents(row) : -amountCents(row);
+    commitments.set(key, commitment);
+  }
+  return [...commitments.values()]
+    .filter((item) => item.amountCents > 0)
+    .map(({ amountCents: value, ...item }) => ({ ...item, open_amount: dollars(value) }));
 }
 
 function rowTime(row, index) {
@@ -45,8 +66,14 @@ export function aggregateBudgetRows(rows, { fundCode } = {}) {
     const actualEntry = initialDeposit
       ? history.slice(initialIndex + 1).filter((row) => row.entry_type === "ACTUAL").at(-1)
       : undefined;
+    const balanceEntry = actualEntry || initialDeposit;
+    const balanceIndex = balanceEntry ? history.indexOf(balanceEntry) : -1;
     const actualsCents = hasInitialDeposit
-      ? actualEntry ? amountCents(actualEntry) : starter
+      ? amountCents(balanceEntry) + history.slice(balanceIndex + 1).reduce((total, row) => {
+        if (row.entry_type === "PURCHASE") return total - amountCents(row);
+        if (row.entry_type === "CREDIT") return total + amountCents(row);
+        return total;
+      }, 0)
       : undefined;
     const openByScope = new Map();
     const openByRef = new Map();
@@ -64,8 +91,14 @@ export function aggregateBudgetRows(rows, { fundCode } = {}) {
 
     const encumberedCents = [...openByRef.values()].reduce((sum, amount) => sum + amount, 0);
     const scopes = [...openByScope.entries()].filter(([, amount]) => amount > 0);
-    const nodes = [...new Set(scopes.map(([scope]) => scope.split("::")[0]).filter(Boolean))].sort(textCompare);
-    const objectCodes = [...new Set(scopes.map(([scope]) => scope.split("::")[1]).filter(Boolean))].sort(textCompare);
+    const ownerNode = String(initialDeposit?.division ?? "").trim();
+    const nodes = ownerNode
+      ? [ownerNode]
+      : [...new Set(scopes.map(([scope]) => scope.split("::")[0]).filter(Boolean))].sort(textCompare);
+    const objectCodes = [...new Set([
+      ...scopes.map(([scope]) => scope.split("::")[1]),
+      ...history.filter((row) => ["PURCHASE", "CREDIT"].includes(row.entry_type)).map((row) => row.object_code)
+    ].filter(Boolean))].sort(textCompare);
     const availableCents = hasInitialDeposit ? actualsCents - encumberedCents : undefined;
     const usedRate = hasInitialDeposit && starter > 0
       ? (starter - actualsCents + encumberedCents) / starter
@@ -113,12 +146,12 @@ export function aggregateBudgetRows(rows, { fundCode } = {}) {
   return { rows: summary, ...totals };
 }
 
-export function getAuditTrail(rows, { fiscalYear, fundCode, division, objectCode, refId } = {}) {
+export function getAuditTrail(rows, { fiscalYear, fundCode, division, objectCode, purchaseId } = {}) {
   return (Array.isArray(rows) ? rows : [])
     .filter((row) => {
       if (fiscalYear !== undefined && Number(row.fiscal_year) !== Number(fiscalYear)) return false;
       if (fundCode !== undefined && String(row.fund_code ?? "").toUpperCase() !== String(fundCode).toUpperCase()) return false;
-      if (refId !== undefined) return row.ref_id === refId;
+      if (purchaseId !== undefined) return row.ref_id === purchaseId;
       return (division === undefined || row.division === division)
         && (objectCode === undefined || row.object_code === objectCode);
     })
@@ -152,13 +185,13 @@ export function validateLedgerBatch(entries, existingRows = [], activeNodeNames 
     if (!Number.isInteger(entry.fiscal_year) || entry.fiscal_year < 1900 || entry.fiscal_year > 9999) errors.push("Row " + number + ": enter a valid fiscal year.");
     if (!entry.fund_code) errors.push("Row " + number + ": fund is required.");
     if (!ENTRY_TYPES.has(entry.entry_type)) errors.push("Row " + number + ": choose a valid budget action.");
-    if (!Number.isFinite(entry.amount) || entry.amount < 0 || (entry.amount === 0 && entry.entry_type !== "ACTUAL")) errors.push("Row " + number + ": enter a valid non-negative amount.");
+    if (!Number.isFinite(entry.amount) || entry.amount < 0 || (entry.amount === 0 && !["ACTUAL", "INITIAL_DEPOSIT"].includes(entry.entry_type))) errors.push("Row " + number + ": enter a valid non-negative amount.");
     if (!entry.memo) errors.push("Row " + number + ": enter a reason for the audit log.");
 
-    if (["ENCUMBRANCE", "LIQUIDATION"].includes(entry.entry_type)) {
-      if (!entry.division) errors.push("Row " + number + ": NODE is required for an encumbrance action.");
-      if (!entry.object_code) errors.push("Row " + number + ": object code is required for an encumbrance action.");
-      if (!entry.ref_id) errors.push("Row " + number + ": a reference ID is required for an encumbrance action.");
+    if (["ENCUMBRANCE", "LIQUIDATION", "PURCHASE", "CREDIT"].includes(entry.entry_type)) {
+      if (!entry.division) errors.push("Row " + number + ": NODE is required for a purchase action.");
+      if (!entry.object_code) errors.push("Row " + number + ": OBJCODE is required for a purchase action.");
+      if (!entry.ref_id) errors.push("Row " + number + ": a Purchase ID is required for a purchase action.");
       if (activeNodeNames.length && !activeNodeNames.some((node) => String(node).toUpperCase() === entry.division.toUpperCase())) {
         errors.push("Row " + number + ": choose an active NODE.");
       }
@@ -187,24 +220,18 @@ export function validateLedgerBatch(entries, existingRows = [], activeNodeNames 
     }
   });
 
-  const open = new Map();
-  for (const row of existingRows) {
-    const key = [String(row.fund_code ?? "").trim().toUpperCase(), row.division || "", row.object_code || "", row.ref_id || ""].join("::");
-    const value = open.get(key) || 0;
-    if (row.entry_type === "ENCUMBRANCE") open.set(key, value + amountCents(row));
-    if (row.entry_type === "LIQUIDATION") open.set(key, value - amountCents(row));
-  }
+  const open = new Map(getOpenCommitments(existingRows).map((item) => [commitmentKey(item), cents(item.open_amount)]));
 
   normalized.forEach((entry, index) => {
     const number = index + 1;
-    const key = [entry.fund_code, entry.division, entry.object_code, entry.ref_id || ""].join("::");
+    const key = commitmentKey(entry);
     if (entry.entry_type === "ENCUMBRANCE" && entry.amount > 0) {
       open.set(key, (open.get(key) || 0) + cents(entry.amount));
     }
     if (entry.entry_type === "LIQUIDATION" && entry.amount > 0) {
       const amountOpen = open.get(key) || 0;
       if (cents(entry.amount) > amountOpen) {
-        errors.push("Row " + number + ": liquidation exceeds open encumbrance for " + entry.ref_id + ".");
+        errors.push("Row " + number + ": release exceeds the open amount for Purchase ID " + entry.ref_id + ".");
       } else {
         open.set(key, amountOpen - cents(entry.amount));
       }

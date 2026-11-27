@@ -1085,7 +1085,6 @@ button:disabled {
 
 #commandBudgetContent [data-budget-totals]{padding:12px;border-left:2px solid var(--color-accent);background:rgba(var(--rgb-accent),.045);color:var(--color-highlight);font-family:var(--font-display)}
 #commandBudgetContent .db-controls label{display:inline-flex;align-items:center;gap:8px;color:var(--color-accent-bright)}
-#commandBudgetEntryContent .trace-recorder-table{min-width:1120px}
 .budget-available{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .budget-status{display:inline-block;padding:3px 7px;border:1px solid currentColor;border-radius:2px;font-size:.78rem;letter-spacing:.06em;white-space:nowrap}
 #commandBudgetEntryContent .ledger-entry-guidance{display:block;max-width:240px;margin-top:5px;color:var(--color-accent-bright);font-size:.76rem;line-height:1.4}

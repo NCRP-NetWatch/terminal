@@ -212,15 +212,15 @@
         <div class="trace-recorder-table-wrap"><table aria-label="Fund budget rollup"><thead><tr><th>FUND</th><th>STARTER</th><th>NODE</th><th>OBJCODE</th><th>ENCUMBERED</th><th>ACTUALS</th><th>AVAILABLE</th><th>%USED</th></tr></thead><tbody data-budget-body></tbody></table></div>
       </section>
       <section id="commandPurchaseContent" class="trace-recorder" hidden aria-labelledby="purchaseFormTitle">
-        <div class="home-overview"><div class="home-welcome"><p class="home-kicker">COMMAND // PURCHASES</p><h2 id="purchaseFormTitle" class="node-title">PURCHASE FORM</h2></div></div>
+        <div class="home-overview"><div class="home-welcome"><p class="home-kicker">COMMAND // BUDGET</p><h2 id="purchaseFormTitle" class="node-title">BUDGET FORM</h2></div></div>
         <form data-purchase-form>
           <datalist id="budgetObjectSuggestions"></datalist>
           <div class="db-controls">
-            <label class="db-sort-label">Action <select class="db-sort" data-purchase-action><option value="commit">Hold funds</option><option value="payNow">Record paid purchase</option><option value="pay">Pay open commitment</option><option value="cancel">Cancel open commitment</option><option value="credit">Refund / credit</option></select></label>
+            <label class="db-sort-label">Action <select class="db-sort" data-purchase-action><option value="addMoney">Add money</option><option value="commit">Hold funds</option><option value="payNow">Record paid purchase</option><option value="pay">Pay open commitment</option><option value="cancel">Cancel open commitment</option><option value="credit">Record refund</option></select></label>
             <div class="db-controls" data-new-purchase-fields>
-              <label class="db-sort-label">Fund <select class="db-sort" data-purchase-fund required></select></label>
-              <label class="db-sort-label">NODE <select class="db-sort" data-purchase-node required></select></label>
-              <label class="db-sort-label">OBJCODE <input class="db-sort" data-purchase-object list="budgetObjectSuggestions" required></label>
+              <label class="db-sort-label" data-purchase-fund-field>Fund <select class="db-sort" data-purchase-fund required></select></label>
+              <label class="db-sort-label" data-purchase-node-field>NODE <select class="db-sort" data-purchase-node required></select></label>
+              <label class="db-sort-label" data-purchase-object-field>OBJCODE <input class="db-sort" data-purchase-object list="budgetObjectSuggestions" required></label>
             </div>
             <div class="db-controls" data-existing-purchase-field hidden>
               <label class="db-sort-label">Open Purchase <select class="db-sort" data-purchase-open></select></label>

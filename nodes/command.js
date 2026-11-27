@@ -108,7 +108,7 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
     const trail=getAuditTrail(ledgerRows,selection);
     const scope=[selection.fiscalYear?"FY "+selection.fiscalYear:"",selection.fundCode?"FUND "+selection.fundCode:"",selection.division?"NODE "+selection.division:"",selection.objectCode?"OBJCODE "+selection.objectCode:"",selection.purchaseId?"PURCHASE "+selection.purchaseId:""].filter(Boolean).join(" / ");
     notesTitleEl.textContent="BUDGET AUDIT // "+(scope||"ALL ENTRIES");
-    notesListEl.replaceChildren(...trail.map(r=>{const li=document.createElement("li"),title=document.createElement("strong"),memo=document.createElement("span"),meta=document.createElement("time");title.textContent=(isInitialDeposit(r)?"INITIAL DEPOSIT":r.entry_type==="ACTUAL"?"CASH BALANCE":r.entry_type)+" — "+formatAmount(Number(r.amount));memo.className="note-meta";memo.textContent=(r.memo||"").replace(/^\[INITIAL DEPOSIT\]\s*/i,"")||"No reason recorded.";meta.className="note-meta";meta.dateTime=r.created_at||"";const p=profiles.find(x=>x.user_id===r.recorded_by),actor=p&&p.agent_name&&p.agent_name.trim()||(isInitialDeposit(r)&&!r.recorded_by?"SYSTEM":"Unknown agent");meta.textContent=(r.created_at?new Date(r.created_at).toLocaleString():"Unknown date")+" · "+actor+" · FY "+r.fiscal_year+(r.division||r.object_code?" · "+[r.division,r.object_code].filter(Boolean).join(" / "):"")+(r.ref_id?" · "+(r.entry_type==="CREDIT"?"CREDIT ID ":"PURCHASE ID ")+r.ref_id:"");li.append(title,memo,meta);return li;}));
+    notesListEl.replaceChildren(...trail.map(r=>{const li=document.createElement("li"),title=document.createElement("strong"),memo=document.createElement("span"),meta=document.createElement("time");title.textContent=(isInitialDeposit(r)?"INITIAL DEPOSIT":r.entry_type==="ACTUAL"?"CASH BALANCE":r.entry_type==="CREDIT"?"REFUND":r.entry_type)+" — "+formatAmount(Number(r.amount));memo.className="note-meta";memo.textContent=(r.memo||"").replace(/^\[INITIAL DEPOSIT\]\s*/i,"")||"No reason recorded.";meta.className="note-meta";meta.dateTime=r.created_at||"";const p=profiles.find(x=>x.user_id===r.recorded_by),actor=p&&p.agent_name&&p.agent_name.trim()||(isInitialDeposit(r)&&!r.recorded_by?"SYSTEM":"Unknown agent");meta.textContent=(r.created_at?new Date(r.created_at).toLocaleString():"Unknown date")+" · "+actor+" · FY "+r.fiscal_year+(r.division||r.object_code?" · "+[r.division,r.object_code].filter(Boolean).join(" / "):"")+(r.ref_id?" · "+(r.entry_type==="CREDIT"?"REFUND ID ":"PURCHASE ID ")+r.ref_id:"");li.append(title,memo,meta);return li;}));
     if(!trail.length){const li=document.createElement("li");li.textContent="No audit entries found.";notesListEl.append(li);}if(!notesDialogEl.open)notesDialogEl.showModal();
   }
   function createEntryRow(values={}) {
@@ -154,19 +154,22 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
     }
     const fund=getFundSummary(purchaseFund.value);
     if(!fund){purchaseSummary.textContent="Select a Fund with an initial deposit.";return;}
-    const balanceLabel=action==="credit"?"Cash":"Available";
-    const balance=action==="credit"?fund.actuals:fund.available;
+    const addsCash=["addMoney","credit"].includes(action);
+    const balanceLabel=addsCash?"Cash":"Available";
+    const balance=addsCash?fund.actuals:fund.available;
     const exceeds=["commit","payNow"].includes(action)&&Number.isFinite(amount)&&amount>fund.available;
     purchaseSummary.textContent=balanceLabel+" "+formatAmount(balance||0)+(exceeds?" · Amount exceeds balance":"");
   }
   function updatePurchaseFields() {
-    const usesOpenPurchase=["pay","cancel"].includes(purchaseAction.value);
+    const action=purchaseAction.value,usesOpenPurchase=["pay","cancel"].includes(action);
+    const needsPurchaseDetails=["commit","payNow","credit"].includes(action);
     newPurchaseFields.hidden=usesOpenPurchase;
     existingPurchaseField.hidden=!usesOpenPurchase;
-    for(const input of newPurchaseFields.querySelectorAll("input,select")){
-      input.disabled=usesOpenPurchase;
-      input.required=!usesOpenPurchase;
-    }
+    purchaseFund.disabled=usesOpenPurchase;purchaseFund.required=!usesOpenPurchase;
+    purchaseNode.disabled=usesOpenPurchase||!needsPurchaseDetails;purchaseNode.required=needsPurchaseDetails;
+    purchaseObject.disabled=usesOpenPurchase||!needsPurchaseDetails;purchaseObject.required=needsPurchaseDetails;
+    purchaseForm.querySelector("[data-purchase-node-field]").hidden=!needsPurchaseDetails;
+    purchaseForm.querySelector("[data-purchase-object-field]").hidden=!needsPurchaseDetails;
     openPurchase.disabled=!usesOpenPurchase;
     openPurchase.required=usesOpenPurchase;
     purchaseSubmit.textContent=purchaseAction.options[purchaseAction.selectedIndex].textContent;
@@ -280,17 +283,22 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
       }else{
         entries=[release];successText="Commitment released for Purchase ID "+purchase.ref_id+".";
       }
+    }else if(action==="addMoney"){
+      const fund=getFundSummary(purchaseFund.value);
+      if(!fund){purchaseMessage.textContent="Choose a Fund with an initial deposit.";return;}
+      entries=[{fiscal_year:year,fund_code:fund.fund_code,division:purchaseNodeForFund(fund.fund_code),object_code:"",ref_id:null,entry_type:"DEPOSIT",amount,memo:reason}];
+      successText="Money added to "+fund.fund_code+".";
     }else{
       const fund=getFundSummary(purchaseFund.value),node=purchaseNode.value,objectCode=purchaseObject.value.trim();
       if(!fund){purchaseMessage.textContent="Choose a Fund with an initial deposit.";return;}
       if(!node||!objectCode){purchaseMessage.textContent="Choose a NODE and OBJCODE.";return;}
       if(["commit","payNow"].includes(action)&&amount>fund.available){purchaseMessage.textContent="Amount exceeds the Fund's available balance.";return;}
       if(action==="credit"&&amount<=0){purchaseMessage.textContent="Enter a credit greater than zero.";return;}
-      const purchaseId=createPurchaseId(action==="credit"?"C":"P");
+      const purchaseId=createPurchaseId(action==="credit"?"R":"P");
       const entry={id:crypto.randomUUID(),fiscal_year:year,fund_code:fund.fund_code,division:node,object_code:objectCode,ref_id:purchaseId,amount,memo:reason};
       entry.entry_type={commit:"ENCUMBRANCE",payNow:"PURCHASE",credit:"CREDIT"}[action];
       entries=[entry];
-      successText=(action==="commit"?"Purchase held":action==="payNow"?"Purchase paid":"Credit recorded")+" · "+(action==="credit"?"Credit ID ":"Purchase ID ")+purchaseId+".";
+      successText=(action==="commit"?"Purchase held":action==="payNow"?"Purchase paid":"Refund recorded")+" · "+(action==="credit"?"Refund ID ":"Purchase ID ")+purchaseId+".";
     }
     await postLedgerEntries(entries,purchaseMessage,purchaseSubmit,successText,()=>{
       purchaseForm.reset();renderSuggestions();
@@ -366,7 +374,7 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
       if (!profiles.length) { ledgerRows = []; subNavEl.replaceChildren(); viewEl.hidden = true; contentEl.hidden = true; budgetContentEl.hidden = true; purchaseContentEl.hidden = true; entryContentEl.hidden = true; return; }
       renderProfiles();
     },
-    show() {viewEl.hidden=false;renderNavButtons(subNavEl,[{id:"access-manager",label:"ACCESS MANAGER"},{id:"budget-ledger",label:"BUDGET LEDGER"},{id:"purchase-form",label:"PURCHASE FORM"},{id:"modify-budget",label:"MODIFY BUDGET"}],{activeId:activeView,onSelect:switchView});switchView(activeView);},
+    show() {viewEl.hidden=false;renderNavButtons(subNavEl,[{id:"access-manager",label:"ACCESS MANAGER"},{id:"budget-ledger",label:"BUDGET LEDGER"},{id:"purchase-form",label:"BUDGET FORM"},{id:"modify-budget",label:"MODIFY BUDGET"}],{activeId:activeView,onSelect:switchView});switchView(activeView);},
     hide() {viewEl.hidden=true;subNavEl.replaceChildren();if(notesDialogEl.open)notesDialogEl.close();}
   };
 }

@@ -1,4 +1,4 @@
-const ENTRY_TYPES = new Set(["INITIAL_DEPOSIT", "ACTUAL", "ENCUMBRANCE", "LIQUIDATION", "PURCHASE", "CREDIT"]);
+const ENTRY_TYPES = new Set(["INITIAL_DEPOSIT", "ACTUAL", "DEPOSIT", "ENCUMBRANCE", "LIQUIDATION", "PURCHASE", "CREDIT"]);
 const cents = (amount) => Math.round((Number(amount) + Number.EPSILON) * 100);
 const dollars = (amount) => amount / 100;
 const amountCents = (row) => Number.isFinite(Number(row.amount)) ? cents(row.amount) : 0;
@@ -71,7 +71,7 @@ export function aggregateBudgetRows(rows, { fundCode } = {}) {
     const actualsCents = hasInitialDeposit
       ? amountCents(balanceEntry) + history.slice(balanceIndex + 1).reduce((total, row) => {
         if (row.entry_type === "PURCHASE") return total - amountCents(row);
-        if (row.entry_type === "CREDIT") return total + amountCents(row);
+        if (["CREDIT", "DEPOSIT"].includes(row.entry_type)) return total + amountCents(row);
         return total;
       }, 0)
       : undefined;
@@ -101,7 +101,7 @@ export function aggregateBudgetRows(rows, { fundCode } = {}) {
     ].filter(Boolean))].sort(textCompare);
     const availableCents = hasInitialDeposit ? actualsCents - encumberedCents : undefined;
     const usedRate = hasInitialDeposit && starter > 0
-      ? (starter - actualsCents + encumberedCents) / starter
+      ? Math.max(0, (starter - actualsCents + encumberedCents) / starter)
       : undefined;
     let status = "NO INITIAL DEPOSIT";
     if (hasInitialDeposit) {
@@ -140,7 +140,7 @@ export function aggregateBudgetRows(rows, { fundCode } = {}) {
   for (const key of Object.keys(totals)) totals[key] = dollars(cents(totals[key]));
   totals.totalEncumbered = dollars(cents(totals.fundedEncumbered + totals.unfundedEncumbered));
   totals.totalUsedRate = totals.totalStarter > 0
-    ? (totals.totalStarter - totals.totalActuals + totals.fundedEncumbered) / totals.totalStarter
+    ? Math.max(0, (totals.totalStarter - totals.totalActuals + totals.fundedEncumbered) / totals.totalStarter)
     : undefined;
 
   return { rows: summary, ...totals };

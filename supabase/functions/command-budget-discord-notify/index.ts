@@ -4,6 +4,8 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS"
 };
 
+import { getWorldDateTimePresentation } from "../../../nodes/dates.js";
+
 type LedgerEntry = {
   id: string;
   fiscal_year: number;
@@ -103,8 +105,8 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: "Posted ledger entries could not be confirmed" }, 409);
     }
 
-    const timestamp = new Date(entries[0].created_at);
-    const dateLabel = Number.isNaN(timestamp.valueOf()) ? "" : timestamp.toISOString().replace("T", " ").replace(/\.\d{3}Z$/, " UTC");
+    const worldDateTime = getWorldDateTimePresentation(entries[0].created_at);
+    const dateLabel = worldDateTime ? `${worldDateTime.label} UTC` : "";
     const fields = entries.map((entry) => {
       const title = `${escapeDiscordText(entry.fund_code, 24)} // ${escapeDiscordText(entry.entry_type, 28)} // FY${escapeDiscordText(entry.fiscal_year, 8)}`;
       const details = [

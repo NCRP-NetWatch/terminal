@@ -1,3 +1,5 @@
+import { getWorldDateSortValue } from "./dates.js";
+
 const ENTRY_TYPES = new Set(["INITIAL_DEPOSIT", "ACTUAL", "DEPOSIT", "ENCUMBRANCE", "LIQUIDATION", "PURCHASE", "CREDIT"]);
 const cents = (amount) => Math.round((Number(amount) + Number.EPSILON) * 100);
 const dollars = (amount) => amount / 100;
@@ -32,8 +34,8 @@ export function getOpenCommitments(rows) {
 }
 
 function rowTime(row, index) {
-  const value = Date.parse(row.created_at ?? "");
-  return Number.isFinite(value) ? value : Number.MAX_SAFE_INTEGER + index;
+  const value = getWorldDateSortValue(row.created_at);
+  return value ?? Number.MAX_SAFE_INTEGER + index;
 }
 
 function getFundHistory(rows, fundCode) {
@@ -156,7 +158,8 @@ export function getAuditTrail(rows, { fiscalYear, fundCode, division, objectCode
         && (objectCode === undefined || row.object_code === objectCode);
     })
     .slice()
-    .sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0)
+    .sort((a, b) => (getWorldDateSortValue(a.created_at) ?? Number.MAX_SAFE_INTEGER)
+      - (getWorldDateSortValue(b.created_at) ?? Number.MAX_SAFE_INTEGER)
       || String(a.id || "").localeCompare(String(b.id || "")));
 }
 

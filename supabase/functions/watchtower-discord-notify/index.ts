@@ -1,3 +1,5 @@
+import { getWorldDateTimePresentation } from "../../../nodes/dates.js";
+
 type TraceSubmission = {
   target_name: string;
   affiliation: string | null;
@@ -34,10 +36,8 @@ function escapeDiscordText(value: unknown, maxLength: number) {
 }
 
 function buildEmbeds(records: TraceSubmission[], agentName: string, submittedAt: string) {
-  const timestamp = new Date(submittedAt);
-  const dateLabel = Number.isNaN(timestamp.valueOf())
-    ? ""
-    : timestamp.toISOString().replace("T", " ").replace(/\.\d{3}Z$/, " UTC");
+  const worldDateTime = getWorldDateTimePresentation(submittedAt);
+  const dateLabel = worldDateTime ? `${worldDateTime.label} UTC` : "";
   const title = "WATCHTOWER // TRACE BATCH";
   const submitter = `Submitted by ${escapeDiscordText(agentName, 80)}${dateLabel ? ` · ${dateLabel}` : ""}`;
   const description = `${submitter}\n${records.length} trace${records.length === 1 ? "" : "s"} submitted.`;

@@ -8,7 +8,8 @@ export function createBadgeSection({
   badgeWorkspaceEl,
   previewEl,
   placeholderFieldsEl,
-  downloadBtn
+  downloadBtn,
+  isReadOnly = () => false
 }) {
   let entries = [];
   let activeIndex = -1;
@@ -43,6 +44,7 @@ export function createBadgeSection({
       const input = document.createElement("input");
       input.type = "text";
       input.maxLength = 80;
+      input.disabled = isReadOnly();
       input.value = item.fieldValues[token] ?? "";
       input.placeholder = `Enter ${token.slice(1, -1).toLowerCase()}`;
       input.addEventListener("input", () => {
@@ -62,6 +64,7 @@ export function createBadgeSection({
     if (!item) return;
 
     activeIndex = index;
+    downloadBtn.hidden = isReadOnly();
     badgePromptEl.hidden = true;
     badgeWorkspaceEl.hidden = false;
     renderFields(item);
@@ -81,6 +84,7 @@ export function createBadgeSection({
   }
 
   downloadBtn.addEventListener("click", () => {
+    if (isReadOnly()) return;
     const item = entries[activeIndex];
     if (!item) return;
 
@@ -103,6 +107,7 @@ export function createBadgeSection({
     },
     show() {
       viewEl.hidden = false;
+      downloadBtn.hidden = isReadOnly();
       badgeNavEl.hidden = false;
       badgePromptEl.hidden = activeIndex >= 0;
       badgeWorkspaceEl.hidden = activeIndex < 0;

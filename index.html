@@ -103,7 +103,7 @@
               </div>
               <div class="status-key-item">
                 <dt class="status-monitored">MONITORED</dt>
-                <dd>Lied to an Agent; displayed evasive or suspicious behavior when confronted; fled the trace; non-lethally resisted capture; or possesses or uses an unapproved pre-DataKrash OS or NetRunner NetDriver OS.</dd>
+                <dd>Signals required attention and follow-up; it does not by itself establish hostility. Indicators include lying to an Agent, evasive or suspicious behavior when confronted, fleeing a trace, non-lethally resisting capture, or possessing or using an unapproved pre-DataKrash OS or NetRunner NetDriver OS.</dd>
               </div>
               <div class="status-key-item">
                 <dt class="status-hostile">HOSTILE</dt>
@@ -177,6 +177,8 @@
 
     <section id="schoolhouseView" hidden>
       <h1 class="node-title">Node-03-Schoolhouse</h1>
+      <p class="home-intro" data-schoolhouse-intro>Training takes place in an isolated environment. Live trace data and active investigation files are prohibited here. Probationary Agents are recommended to complete the instruction below before assisting assigned personnel under supervision.</p>
+      <div class="home-overview" data-schoolhouse-content></div>
     </section>
 
     <section id="commandView" class="home-view" hidden>
@@ -187,7 +189,7 @@
             <p class="home-kicker">COMMAND // PERSONNEL CONTROL</p>
             <h2 id="accessManagerTitle" class="node-title">ACCESS MANAGER</h2>
           </div>
-          <p class="home-intro">You can change ranks below your own. Equal and higher ranks are locked. Rank changes are sent to Discord.</p>
+          <p class="home-intro">Personnel ranks are listed here. Rank changes require authorized Command access and are sent to Discord.</p>
         </div>
         <p class="trace-recorder-message" data-access-status role="status" aria-live="polite"></p>
         <div class="trace-recorder-table-wrap">
@@ -202,6 +204,43 @@
             <tbody data-access-body></tbody>
           </table>
         </div>
+      </section>
+      <section id="commandBudgetContent" hidden aria-labelledby="budgetLedgerTitle">
+        <div class="home-overview"><div class="home-welcome"><p class="home-kicker">COMMAND // FINANCE CONTROL</p><h2 id="budgetLedgerTitle" class="node-title">BUDGET LEDGER</h2></div></div>
+        <div class="db-controls"><label>Fund <input class="db-sort" data-budget-fund list="budgetFundFilterSuggestions" placeholder="All funds"></label><datalist id="budgetFundFilterSuggestions"></datalist><input class="db-search" data-budget-search type="search" aria-label="Search budget funds" placeholder="Search fund, NODE, or OBJCODE"><label class="db-sort-label" for="budgetSort">Sort by</label><select id="budgetSort" class="db-sort" data-budget-sort aria-label="Sort budget funds"><option value="fund_code-asc">Fund (A–Z)</option><option value="available-asc">Available (low first)</option><option value="usedRate-desc">% Used (high first)</option></select></div>
+        <p data-budget-totals aria-live="polite"></p><p class="trace-recorder-message" data-budget-status role="status" aria-live="polite"></p>
+        <div class="trace-recorder-table-wrap"><table aria-label="Fund budget rollup"><thead><tr><th>FUND</th><th>STARTER</th><th>NODE</th><th>OBJCODE</th><th>ENCUMBERED</th><th>ACTUALS</th><th>AVAILABLE</th><th>%USED</th></tr></thead><tbody data-budget-body></tbody></table></div>
+      </section>
+      <section id="commandPurchaseContent" class="trace-recorder" hidden aria-labelledby="purchaseFormTitle">
+        <div class="home-overview"><div class="home-welcome"><p class="home-kicker">COMMAND // PURCHASES</p><h2 id="purchaseFormTitle" class="node-title">PURCHASE FORM</h2></div></div>
+        <form data-purchase-form>
+          <datalist id="budgetObjectSuggestions"></datalist><datalist id="purchaseFundSuggestions"></datalist>
+          <div class="db-controls">
+            <label class="db-sort-label">Action <select class="db-sort" data-purchase-action><option value="addMoney">Add money</option><option value="commit">Hold funds</option><option value="payNow">Record paid purchase</option><option value="pay">Pay Held Funds</option><option value="cancel">Cancel Held Funds</option><option value="credit">Withdraw money</option></select></label>
+            <div class="db-controls" data-new-purchase-fields>
+              <label class="db-sort-label" data-purchase-fund-field>Fund <input class="db-sort" data-purchase-fund list="purchaseFundSuggestions" maxlength="40" required></label>
+              <label class="db-sort-label" data-purchase-node-field>NODE <select class="db-sort" data-purchase-node required></select></label>
+              <label class="db-sort-label" data-purchase-object-field>OBJCODE <input class="db-sort" data-purchase-object list="budgetObjectSuggestions" required></label>
+            </div>
+            <div class="db-controls" data-existing-purchase-field hidden>
+              <label class="db-sort-label">Open Purchase <select class="db-sort" data-purchase-open></select></label>
+            </div>
+            <label class="db-sort-label">Amount (€$) <input class="db-sort" data-purchase-amount type="number" min="0.01" step="0.01" required></label>
+            <label class="db-sort-label">Reason <input class="db-search" data-purchase-reason maxlength="500" required></label>
+          </div>
+          <p class="trace-recorder-message" data-purchase-summary role="status" aria-live="polite"></p>
+          <div class="trace-recorder-actions"><div class="trace-recorder-buttons"><button class="trace-submit" data-purchase-submit type="submit">Hold funds</button></div></div>
+          <p class="trace-recorder-message" data-purchase-message role="status" aria-live="polite"></p>
+          <h3 class="node-title">PURCHASE REQUESTS</h3>
+          <div class="trace-recorder-table-wrap"><table class="trace-recorder-table" aria-label="Purchase requests"><thead><tr><th>Submitted</th><th>Requester</th><th>Purchase</th><th>Fund / NODE</th><th>OBJCODE</th><th>Amount</th><th>Reason / review</th><th>Status / action</th></tr></thead><tbody data-purchase-requests></tbody></table></div>
+        </form>
+      </section>
+      <section id="commandBudgetEntryContent" class="trace-recorder" hidden aria-labelledby="modifyBudgetTitle">
+        <div class="home-overview"><div class="home-welcome"><p class="home-kicker">COMMAND // BUDGET ADJUSTMENTS</p><h2 id="modifyBudgetTitle" class="node-title">MODIFY BUDGET</h2></div></div>
+        <form data-ledger-entry-form><datalist id="budgetFundSuggestions"></datalist>
+          <div class="trace-recorder-table-wrap"><table class="trace-recorder-table" aria-label="Modify budget"><thead><tr><th>Fiscal Year</th><th>Fund</th><th>Budget Action</th><th>Amount (€$)</th><th>Reason</th><th>Action</th></tr></thead><tbody data-ledger-entry-rows></tbody></table></div>
+          <div class="trace-recorder-actions"><div class="trace-recorder-buttons"><button data-add-ledger-row type="button">Add row</button><button class="trace-submit" type="submit">Save changes</button></div></div><p class="trace-recorder-message" data-ledger-entry-message role="status" aria-live="polite"></p>
+        </form>
       </section>
     </section>
     <dialog id="notesDialog" class="notes-dialog" aria-labelledby="notesTitle">

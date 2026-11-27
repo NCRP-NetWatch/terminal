@@ -86,6 +86,7 @@ const command = createCommandNode({
   activeNodeNames: NODES.map((node) => node.label),
   contentEl: document.getElementById("commandAccessContent"),
   budgetContentEl: document.getElementById("commandBudgetContent"),
+  purchaseContentEl: document.getElementById("commandPurchaseContent"),
   entryContentEl: document.getElementById("commandBudgetEntryContent"),
   notesDialogEl: document.getElementById("notesDialog"),
   notesTitleEl: document.getElementById("notesTitle"),

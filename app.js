@@ -4,12 +4,12 @@ import { createSchoolhouseNode } from "./nodes/schoolhouse.js";
 import { createBadgeSection } from "./nodes/badge-section.js";
 import { createCommandNode } from "./nodes/command.js";
 import { loadBadge, loadBadgeEntries, namespaceBadgeSvgIds, renderBadgeSvg } from "./nodes/badges.js";
-import { formatRank, getBadgeIdForRank, isAuthorizedRank, isReadOnlyRank, isTraceOnlyRank, normalizeRank } from "./nodes/ranks.js";
+import { formatRank, getBadgeIdForRank, hasProfileFlag, isAuthorizedRank, isReadOnlyRank, isTraceOnlyRank, normalizeRank } from "./nodes/ranks.js";
 import { renderNavButtons } from "./nodes/navigation.js";
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "./supabase-config.js";
 
 const NODES = [
-  { id: "command", label: "NODE-0X-COMMAND", title: "Command", description: "NCFO administration, standing directives, and cross-NODE coordination." },
+  { id: "command", label: "NODE-0X-COMMAND", title: "Command", description: "Personnel controls, budget ledger, and purchase forms." },
   { id: "watchtower", label: "NODE-01-WATCHTOWER", title: "Watchtower", description: "Authoritative record of successful traces and high-priority investigations." },
   { id: "library", label: "NODE-02-LIBRARY", title: "Library", description: "Administrative records, personnel records, access tokens, equipment logs, fines, and acting designations." },
   { id: "schoolhouse", label: "NODE-03-SCHOOLHOUSE", title: "Schoolhouse", description: "Isolated training simulations and compliance exercises." }
@@ -96,7 +96,9 @@ const command = createCommandNode({
   closeNotesEl: document.getElementById("closeNotes"),
   getSupabaseClient: () => supabaseClient,
   getCurrentProfile: () => currentProfile,
-  isReadOnly: () => isReadOnlyRank(currentProfile?.rank)
+  isReadOnly: () => isReadOnlyRank(currentProfile?.rank),
+  hasCommandAccess: () => hasProfileFlag(currentProfile, "COMMAND"),
+  hasFinanceAccess: () => hasProfileFlag(currentProfile, "FINANCE")
 });
 
 const nodeControllers = { watchtower, library, schoolhouse, command };
@@ -147,8 +149,10 @@ function getAllowedNodes(profile) {
   if (!isAuthorizedRank(profile.rank)) return [];
   if (isTraceOnlyRank(profile.rank)) return NODES.filter((node) => node.id === "watchtower");
   if (normalizeRank(profile.rank) === "ncpd command") return NODES;
-  const flags = Array.isArray(profile.flags) ? profile.flags : [];
-  return NODES.filter((node) => node.id !== "command" || flags.includes("COMMAND"));
+  return NODES.filter((node) => node.id !== "command"
+    || hasProfileFlag(profile, "COMMAND")
+    || hasProfileFlag(profile, "FINANCE")
+    || !isReadOnlyRank(profile.rank));
 }
 
 function renderNodeNav(profile, activeId = activeNodeId) {

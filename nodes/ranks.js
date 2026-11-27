@@ -31,6 +31,10 @@ export function isAuthorizedRank(rank) {
   return RANKS.has(normalizeRank(rank));
 }
 
+export function hasProfileFlag(profile, flag) {
+  return Array.isArray(profile?.flags) && profile.flags.includes(flag);
+}
+
 export function isReadOnlyRank(rank) {
   return ["ncpd command", "ncpd detective"].includes(normalizeRank(rank));
 }

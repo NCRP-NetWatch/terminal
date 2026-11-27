@@ -78,13 +78,16 @@ Deno.serve(async (request) => {
     if (!userResponse.ok) return jsonResponse({ error: "Unauthorized" }, 401);
     const user = await userResponse.json();
 
-    const profileQuery = new URLSearchParams({ user_id: `eq.${user.id}`, select: "agent_name,flags" });
+    const profileQuery = new URLSearchParams({ user_id: `eq.${user.id}`, select: "agent_name,flags,rank" });
     const profileResponse = await fetch(`${supabaseUrl}/rest/v1/profiles?${profileQuery}`, {
       headers: { apikey: serviceKey, authorization: `Bearer ${serviceKey}` }
     });
-    if (!profileResponse.ok) throw new Error("Could not verify COMMAND access");
+    if (!profileResponse.ok) throw new Error("Could not verify FINANCE access");
     const actor = (await profileResponse.json())[0];
-    if (!actor?.flags?.includes("COMMAND")) return jsonResponse({ error: "COMMAND access required" }, 403);
+    const normalizedRank = String(actor?.rank ?? "").trim().toLowerCase().replace(/[_\s]+/g, " ");
+    if (!actor?.rank || !actor?.flags?.includes("FINANCE") || ["ncpd command", "ncpd detective"].includes(normalizedRank)) {
+      return jsonResponse({ error: "FINANCE access required" }, 403);
+    }
 
     const idsFilter = `in.(${ledgerIds.join(",")})`;
     const ledgerQuery = new URLSearchParams({
@@ -113,7 +116,7 @@ Deno.serve(async (request) => {
         `Amount: ${money(entry.amount)}`,
         entry.division ? `NODE: ${escapeDiscordText(entry.division, 70)}` : "",
         entry.object_code ? `OBJCODE: ${escapeDiscordText(entry.object_code, 60)}` : "",
-        entry.ref_id ? `${entry.entry_type === "CREDIT" ? "Credit ID" : "Purchase ID"}: ${escapeDiscordText(entry.ref_id, 60)}` : "",
+        entry.ref_id ? `${entry.entry_type === "CREDIT" ? "Withdrawal ID" : "Purchase ID"}: ${escapeDiscordText(entry.ref_id, 60)}` : "",
         entry.memo ? `Memo: ${escapeDiscordText(entry.memo, 150)}` : ""
       ].filter(Boolean).join("\n");
       return { name: title.slice(0, 256), value: details.slice(0, 1024), inline: false };

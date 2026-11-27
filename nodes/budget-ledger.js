@@ -1,139 +1,115 @@
-const ENTRY_TYPES = new Set(["APPROPRIATION", "AMENDMENT", "ENCUMBRANCE", "LIQUIDATION", "ACTUAL"]);
+const ENTRY_TYPES = new Set(["INITIAL_DEPOSIT", "ACTUAL", "ENCUMBRANCE", "LIQUIDATION"]);
 const cents = (amount) => Math.round((Number(amount) + Number.EPSILON) * 100);
 const dollars = (amount) => amount / 100;
 const amountCents = (row) => Number.isFinite(Number(row.amount)) ? cents(row.amount) : 0;
-const lineKey = (row) => [row.fiscal_year || "", row.fund_code || "", row.division || "", row.object_code || ""].join("::");
-const refKey = (row) => [lineKey(row), row.ref_id || ""].join("::");
 const textCompare = (a, b) => String(a || "").localeCompare(String(b || ""), undefined, { numeric: true, sensitivity: "base" });
+const INITIAL_DEPOSIT_MARKER = "[INITIAL DEPOSIT]";
 
-export function prepareLedgerSubmission(entries, existingRows = []) {
-  const prepared = [];
-  const workingRows = Array.isArray(existingRows) ? existingRows.slice() : [];
-  const errors = [];
-  let unchanged = 0;
-
-  (Array.isArray(entries) ? entries : []).forEach((rawEntry, index) => {
-    const entry = {
-      ...rawEntry,
-      fiscal_year: Number(rawEntry.fiscal_year),
-      fund_code: String(rawEntry.fund_code || "").trim(),
-      division: String(rawEntry.division || "").trim(),
-      object_code: String(rawEntry.object_code || "").trim(),
-      ref_id: String(rawEntry.ref_id || "").trim() || null,
-      entry_type: String(rawEntry.entry_type || "").trim().toUpperCase(),
-      amount: Number(rawEntry.amount),
-      memo: String(rawEntry.memo || "").trim() || null
-    };
-
-    if (entry.entry_type !== "SET_AVAILABLE") {
-      prepared.push(entry);
-      workingRows.push(entry);
-      return;
-    }
-
-    const rowNumber = index + 1;
-    if (!Number.isInteger(entry.fiscal_year) || entry.fiscal_year < 1900 || entry.fiscal_year > 9999) errors.push("Row " + rowNumber + ": enter a valid fiscal year.");
-    for (const [field, label] of [["fund_code", "fund"], ["division", "NODE"], ["object_code", "object code"]]) {
-      if (!entry[field]) errors.push("Row " + rowNumber + ": " + label + " is required.");
-    }
-    if (!Number.isFinite(entry.amount)) errors.push("Row " + rowNumber + ": enter a valid target available balance.");
-    if (!entry.memo) errors.push("Row " + rowNumber + ": enter a reason for the audit log.");
-    if (errors.length) return;
-
-    const current = aggregateBudgetRows(workingRows, {
-      fiscalYear: entry.fiscal_year,
-      fundCode: entry.fund_code
-    }).rows.find((row) => row.division === entry.division && row.object_code === entry.object_code)?.available || 0;
-    const adjustmentCents = cents(entry.amount) - cents(current);
-
-    if (adjustmentCents === 0) {
-      unchanged += 1;
-      return;
-    }
-
-    const adjustment = {
-      ...entry,
-      entry_type: "AMENDMENT",
-      amount: dollars(adjustmentCents),
-      memo: ("Set available to $" + dollars(cents(entry.amount)).toFixed(2) + (entry.memo ? "; " + entry.memo : "" )).slice(0, 500)
-    };
-    prepared.push(adjustment);
-    workingRows.push(adjustment);
-  });
-
-  return { entries: prepared, errors, unchanged };
+export function isInitialDeposit(row) {
+  return row.entry_type === "APPROPRIATION"
+    && String(row.memo ?? "").trim().toUpperCase().startsWith(INITIAL_DEPOSIT_MARKER);
 }
 
-export function aggregateBudgetRows(rows, { fiscalYear, fundCode } = {}) {
-  const groups = new Map();
+function rowTime(row, index) {
+  const value = Date.parse(row.created_at ?? "");
+  return Number.isFinite(value) ? value : Number.MAX_SAFE_INTEGER + index;
+}
 
-  for (const row of (Array.isArray(rows) ? rows : [])) {
-    if (fiscalYear !== undefined && fiscalYear !== "" && Number(row.fiscal_year) !== Number(fiscalYear)) continue;
-    if (fundCode !== undefined && fundCode !== "" && row.fund_code !== fundCode) continue;
+function getFundHistory(rows, fundCode) {
+  return rows
+    .map((row, index) => ({ row, index }))
+    .filter(({ row }) => String(row.fund_code ?? "").trim().toUpperCase() === fundCode)
+    .sort((a, b) => rowTime(a.row, a.index) - rowTime(b.row, b.index))
+    .map(({ row }) => row);
+}
 
-    const key = lineKey(row);
-    let group = groups.get(key);
-    if (!group) {
-      group = {
-        fiscal_year: Number(row.fiscal_year),
-        fund_code: row.fund_code,
-        division: row.division,
-        object_code: row.object_code,
-        revisedCents: 0,
-        encumberedCents: 0,
-        actualsCents: 0
-      };
-      groups.set(key, group);
+export function aggregateBudgetRows(rows, { fundCode } = {}) {
+  const entries = Array.isArray(rows) ? rows : [];
+  const funds = new Set();
+  for (const row of entries) {
+    const fund = String(row.fund_code ?? "").trim().toUpperCase();
+    if (fund) funds.add(fund);
+  }
+  const selectedFund = fundCode === undefined || fundCode === ""
+    ? undefined
+    : String(fundCode).trim().toUpperCase();
+  const summary = [];
+
+  for (const fund of funds) {
+    if (selectedFund && fund !== selectedFund) continue;
+    const history = getFundHistory(entries, fund);
+    const initialDeposit = history.find(isInitialDeposit);
+    const starter = initialDeposit ? amountCents(initialDeposit) : undefined;
+    const hasInitialDeposit = Boolean(initialDeposit);
+    const initialIndex = initialDeposit ? history.indexOf(initialDeposit) : -1;
+    const actualEntry = initialDeposit
+      ? history.slice(initialIndex + 1).filter((row) => row.entry_type === "ACTUAL").at(-1)
+      : undefined;
+    const actualsCents = hasInitialDeposit
+      ? actualEntry ? amountCents(actualEntry) : starter
+      : undefined;
+    const openByScope = new Map();
+    const openByRef = new Map();
+
+    for (const row of history) {
+      if (row.entry_type === "ENCUMBRANCE" || row.entry_type === "LIQUIDATION") {
+        const amount = amountCents(row);
+        const scope = [row.division || "", row.object_code || ""].join("::");
+        const ref = [scope, row.ref_id || ""].join("::");
+        const delta = row.entry_type === "ENCUMBRANCE" ? amount : -amount;
+        openByScope.set(scope, (openByScope.get(scope) || 0) + delta);
+        openByRef.set(ref, (openByRef.get(ref) || 0) + delta);
+      }
     }
 
-    const amount = amountCents(row);
-    if (row.entry_type === "APPROPRIATION" || row.entry_type === "AMENDMENT") group.revisedCents += amount;
-    else if (row.entry_type === "ENCUMBRANCE") group.encumberedCents += amount;
-    else if (row.entry_type === "LIQUIDATION") group.encumberedCents -= amount;
-    else if (row.entry_type === "ACTUAL") group.actualsCents += amount;
-  }
+    const encumberedCents = [...openByRef.values()].reduce((sum, amount) => sum + amount, 0);
+    const scopes = [...openByScope.entries()].filter(([, amount]) => amount > 0);
+    const nodes = [...new Set(scopes.map(([scope]) => scope.split("::")[0]).filter(Boolean))].sort(textCompare);
+    const objectCodes = [...new Set(scopes.map(([scope]) => scope.split("::")[1]).filter(Boolean))].sort(textCompare);
+    const availableCents = hasInitialDeposit ? actualsCents - encumberedCents : undefined;
+    const usedRate = hasInitialDeposit && starter > 0
+      ? (starter - actualsCents + encumberedCents) / starter
+      : undefined;
+    let status = "NO INITIAL DEPOSIT";
+    if (hasInitialDeposit) {
+      if (availableCents < 0) status = "OVER COMMITTED";
+      else if (availableCents === 0) status = "FULLY COMMITTED";
+      else if (usedRate >= 0.75) status = "NEAR LIMIT";
+      else status = "AVAILABLE";
+    }
 
-  const summary = [...groups.values()].map((group) => {
-    const revised = dollars(group.revisedCents);
-    const encumbered = dollars(group.encumberedCents);
-    const actuals = dollars(group.actualsCents);
-    const available = dollars(group.revisedCents - group.encumberedCents - group.actualsCents);
-    const usedRate = revised > 0 ? (encumbered + actuals) / revised : 0;
-    const availableRate = revised > 0 ? available / revised : 0;
-    let status;
-
-    if (available < 0) status = "OVER BUDGET";
-    else if (revised <= 0) status = "UNFUNDED";
-    else if (available === 0) status = "FULLY COMMITTED";
-    else if (availableRate <= 0.25) status = "NEAR LIMIT";
-    else status = "AVAILABLE";
-
-    return {
-      fiscal_year: group.fiscal_year,
-      fund_code: group.fund_code,
-      division: group.division,
-      object_code: group.object_code,
-      revised,
-      encumbered,
-      actuals,
-      available,
+    summary.push({
+      fund_code: fund,
+      node: nodes.join(", "),
+      object_code: objectCodes.join(", "),
+      starter: starter === undefined ? undefined : dollars(starter),
+      encumbered: dollars(encumberedCents),
+      actuals: actualsCents === undefined ? undefined : dollars(actualsCents),
+      available: availableCents === undefined ? undefined : dollars(availableCents),
       usedRate,
       status
-    };
-  }).sort((a, b) => a.fiscal_year - b.fiscal_year
-    || textCompare(a.fund_code, b.fund_code)
-    || textCompare(a.division, b.division)
-    || textCompare(a.object_code, b.object_code));
+    });
+  }
 
+  summary.sort((a, b) => textCompare(a.fund_code, b.fund_code));
   const totals = summary.reduce((total, row) => {
-    total.totalRevised += row.revised;
-    total.totalEncumbered += row.encumbered;
-    total.totalActuals += row.actuals;
-    total.totalAvailable += row.available;
+    if (row.starter !== undefined) {
+      total.totalStarter += row.starter;
+      if (row.actuals !== undefined) total.totalActuals += row.actuals;
+      if (row.available !== undefined) total.totalAvailable += row.available;
+      if (row.status !== "NO INITIAL DEPOSIT") total.fundedEncumbered += row.encumbered;
+      else total.unfundedEncumbered += row.encumbered;
+    } else {
+      total.unfundedEncumbered += row.encumbered;
+    }
     return total;
-  }, { totalRevised: 0, totalEncumbered: 0, totalActuals: 0, totalAvailable: 0 });
-
+  }, { totalStarter: 0, totalActuals: 0, totalAvailable: 0, fundedEncumbered: 0, unfundedEncumbered: 0 });
   for (const key of Object.keys(totals)) totals[key] = dollars(cents(totals[key]));
+  totals.totalEncumbered = dollars(cents(totals.fundedEncumbered + totals.unfundedEncumbered));
+  totals.totalUsedRate = totals.totalStarter > 0
+    ? (totals.totalStarter - totals.totalActuals + totals.fundedEncumbered) / totals.totalStarter
+    : undefined;
+
   return { rows: summary, ...totals };
 }
 
@@ -141,9 +117,9 @@ export function getAuditTrail(rows, { fiscalYear, fundCode, division, objectCode
   return (Array.isArray(rows) ? rows : [])
     .filter((row) => {
       if (fiscalYear !== undefined && Number(row.fiscal_year) !== Number(fiscalYear)) return false;
+      if (fundCode !== undefined && String(row.fund_code ?? "").toUpperCase() !== String(fundCode).toUpperCase()) return false;
       if (refId !== undefined) return row.ref_id === refId;
-      return (fundCode === undefined || row.fund_code === fundCode)
-        && (division === undefined || row.division === division)
+      return (division === undefined || row.division === division)
         && (objectCode === undefined || row.object_code === objectCode);
     })
     .slice()
@@ -151,12 +127,12 @@ export function getAuditTrail(rows, { fiscalYear, fundCode, division, objectCode
       || String(a.id || "").localeCompare(String(b.id || "")));
 }
 
-export function validateLedgerBatch(entries, existingRows = []) {
+export function validateLedgerBatch(entries, existingRows = [], activeNodeNames = []) {
   const errors = [];
   const normalized = (Array.isArray(entries) ? entries : []).map((entry) => ({
     ...entry,
     fiscal_year: Number(entry.fiscal_year),
-    fund_code: String(entry.fund_code || "").trim(),
+    fund_code: String(entry.fund_code || "").trim().toUpperCase(),
     division: String(entry.division || "").trim(),
     object_code: String(entry.object_code || "").trim(),
     ref_id: String(entry.ref_id || "").trim() || null,
@@ -164,10 +140,56 @@ export function validateLedgerBatch(entries, existingRows = []) {
     amount: Number(entry.amount),
     memo: String(entry.memo || "").trim() || null
   }));
+  const existingInitialFunds = new Set((Array.isArray(existingRows) ? existingRows : [])
+    .filter(isInitialDeposit)
+    .map((row) => String(row.fund_code ?? "").trim().toUpperCase()));
+  const initialFunds = new Set(existingInitialFunds);
+  const newInitialFunds = new Set();
+  const actualFundsInBatch = new Set();
+
+  normalized.forEach((entry, index) => {
+    const number = index + 1;
+    if (!Number.isInteger(entry.fiscal_year) || entry.fiscal_year < 1900 || entry.fiscal_year > 9999) errors.push("Row " + number + ": enter a valid fiscal year.");
+    if (!entry.fund_code) errors.push("Row " + number + ": fund is required.");
+    if (!ENTRY_TYPES.has(entry.entry_type)) errors.push("Row " + number + ": choose a valid budget action.");
+    if (!Number.isFinite(entry.amount) || entry.amount < 0 || (entry.amount === 0 && entry.entry_type !== "ACTUAL")) errors.push("Row " + number + ": enter a valid non-negative amount.");
+    if (!entry.memo) errors.push("Row " + number + ": enter a reason for the audit log.");
+
+    if (["ENCUMBRANCE", "LIQUIDATION"].includes(entry.entry_type)) {
+      if (!entry.division) errors.push("Row " + number + ": NODE is required for an encumbrance action.");
+      if (!entry.object_code) errors.push("Row " + number + ": object code is required for an encumbrance action.");
+      if (!entry.ref_id) errors.push("Row " + number + ": a reference ID is required for an encumbrance action.");
+      if (activeNodeNames.length && !activeNodeNames.some((node) => String(node).toUpperCase() === entry.division.toUpperCase())) {
+        errors.push("Row " + number + ": choose an active NODE.");
+      }
+    }
+
+    if (entry.entry_type === "INITIAL_DEPOSIT") {
+      if (initialFunds.has(entry.fund_code)) {
+        errors.push("Row " + number + ": an initial deposit already exists for fund " + entry.fund_code + ". It cannot be changed or replaced.");
+      } else if ((Array.isArray(existingRows) ? existingRows : []).some((row) => String(row.fund_code ?? "").trim().toUpperCase() === entry.fund_code)) {
+        errors.push("Row " + number + ": the initial deposit must be the first ledger entry for fund " + entry.fund_code + ".");
+      } else {
+        initialFunds.add(entry.fund_code);
+        newInitialFunds.add(entry.fund_code);
+      }
+    }
+
+    if (entry.entry_type !== "INITIAL_DEPOSIT" && !existingInitialFunds.has(entry.fund_code)) {
+      errors.push("Row " + number + ": post the fund's initial deposit in a separate batch before recording other activity.");
+    } else if (entry.entry_type !== "INITIAL_DEPOSIT" && newInitialFunds.has(entry.fund_code)) {
+      errors.push("Row " + number + ": post the fund's initial deposit in a separate batch before recording other activity.");
+    }
+
+    if (entry.entry_type === "ACTUAL") {
+      if (actualFundsInBatch.has(entry.fund_code)) errors.push("Row " + number + ": set the actual balance once per fund in each batch.");
+      actualFundsInBatch.add(entry.fund_code);
+    }
+  });
 
   const open = new Map();
   for (const row of existingRows) {
-    const key = refKey(row);
+    const key = [String(row.fund_code ?? "").trim().toUpperCase(), row.division || "", row.object_code || "", row.ref_id || ""].join("::");
     const value = open.get(key) || 0;
     if (row.entry_type === "ENCUMBRANCE") open.set(key, value + amountCents(row));
     if (row.entry_type === "LIQUIDATION") open.set(key, value - amountCents(row));
@@ -175,30 +197,16 @@ export function validateLedgerBatch(entries, existingRows = []) {
 
   normalized.forEach((entry, index) => {
     const number = index + 1;
-    if (!Number.isInteger(entry.fiscal_year) || entry.fiscal_year < 1900 || entry.fiscal_year > 9999) errors.push("Row " + number + ": enter a valid fiscal year.");
-    for (const [field, label] of [["fund_code", "fund"], ["division", "division"], ["object_code", "object code"]]) {
-      if (!entry[field]) errors.push("Row " + number + ": " + label + " is required.");
-    }
-    if (!ENTRY_TYPES.has(entry.entry_type)) errors.push("Row " + number + ": choose a valid entry type.");
-    if (!Number.isFinite(entry.amount) || entry.amount === 0) errors.push("Row " + number + ": amount must be a non-zero number.");
-    if (!entry.memo) errors.push("Row " + number + ": enter a reason for the audit log.");
-    if (entry.entry_type !== "AMENDMENT" && Number.isFinite(entry.amount) && entry.amount < 0) {
-      errors.push("Row " + number + ": " + entry.entry_type.toLowerCase() + " amounts must be positive; use a negative amendment to reduce an appropriation.");
-    }
-    if (["ENCUMBRANCE", "LIQUIDATION"].includes(entry.entry_type) && !entry.ref_id) {
-      errors.push("Row " + number + ": a reference ID is required for " + entry.entry_type.toLowerCase() + " entries.");
-    }
+    const key = [entry.fund_code, entry.division, entry.object_code, entry.ref_id || ""].join("::");
     if (entry.entry_type === "ENCUMBRANCE" && entry.amount > 0) {
-      const key = refKey(entry);
       open.set(key, (open.get(key) || 0) + cents(entry.amount));
     }
-    if (entry.entry_type === "LIQUIDATION" && Number.isFinite(entry.amount) && entry.amount > 0) {
-      const key = refKey(entry);
-      const value = open.get(key) || 0;
-      if (cents(entry.amount) > value) {
-        errors.push("Row " + number + ": liquidation (" + entry.amount.toFixed(2) + ") exceeds open encumbrance (" + dollars(value).toFixed(2) + ") for " + entry.ref_id + ".");
+    if (entry.entry_type === "LIQUIDATION" && entry.amount > 0) {
+      const amountOpen = open.get(key) || 0;
+      if (cents(entry.amount) > amountOpen) {
+        errors.push("Row " + number + ": liquidation exceeds open encumbrance for " + entry.ref_id + ".");
       } else {
-        open.set(key, value - cents(entry.amount));
+        open.set(key, amountOpen - cents(entry.amount));
       }
     }
   });

@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.access-change-discord-notify]
 verify_jwt = true
+
+[functions.command-budget-discord-notify]
+verify_jwt = true

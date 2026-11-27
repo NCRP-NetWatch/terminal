@@ -83,6 +83,7 @@ const schoolhouse = createSchoolhouseNode({
 const command = createCommandNode({
   viewEl: document.getElementById("commandView"),
   subNavEl,
+  activeNodeNames: NODES.map((node) => node.label),
   contentEl: document.getElementById("commandAccessContent"),
   budgetContentEl: document.getElementById("commandBudgetContent"),
   entryContentEl: document.getElementById("commandBudgetEntryContent"),

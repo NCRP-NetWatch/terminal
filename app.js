@@ -9,10 +9,10 @@ import { renderNavButtons } from "./nodes/navigation.js";
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "./supabase-config.js";
 
 const NODES = [
-  { id: "command", label: "NODE-0X-COMMAND", title: "Command", description: "Personnel access, budget rollup, audit history, and ledger entry." },
-  { id: "watchtower", label: "NODE-01-WATCHTOWER", title: "Watchtower", description: "Trace node; stores traces and cases" },
-  { id: "library", label: "NODE-02-LIBRARY", title: "Library", description: "Clerical node containing the SOP, standing orders, and other documents." },
-  { id: "schoolhouse", label: "NODE-03-SCHOOLHOUSE", title: "Schoolhouse", description: "Currently empty." }
+  { id: "command", label: "NODE-0X-COMMAND", title: "Command", description: "NCFO administration, standing directives, and cross-NODE coordination." },
+  { id: "watchtower", label: "NODE-01-WATCHTOWER", title: "Watchtower", description: "Authoritative record of successful traces and high-priority investigations." },
+  { id: "library", label: "NODE-02-LIBRARY", title: "Library", description: "Administrative records, personnel records, access tokens, equipment logs, fines, and acting designations." },
+  { id: "schoolhouse", label: "NODE-03-SCHOOLHOUSE", title: "Schoolhouse", description: "Isolated training simulations and compliance exercises." }
 ];
 
 const authGateEl = document.getElementById("authGate");

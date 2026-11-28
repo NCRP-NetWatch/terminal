@@ -1,4 +1,6 @@
 import { getWorldDateTimePresentation } from "../../../nodes/dates.js";
+import { escapeDiscordText } from "../_shared/discord.js";
+import { jsonResponse } from "../_shared/http.js";
 
 type TraceSubmission = {
   target_name: string;
@@ -18,32 +20,15 @@ type TraceBatchPayload = {
 const MAX_EMBED_TEXT = 5600;
 const MAX_BATCH_SIZE = 30;
 
-function jsonResponse(body: unknown, status: number) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "Content-Type": "application/json; charset=utf-8" }
-  });
-}
-
-function escapeDiscordText(value: unknown, maxLength: number) {
-  const clean = String(value ?? "")
-    .replace(/@/g, "＠")
-    .replace(/[\\`*_{}\[\]()<>#+\-.!|~]/g, "\\$&")
-    .replace(/[\r\n\t]+/g, " ")
-    .trim();
-  if (clean.length <= maxLength) return clean;
-  return `${clean.slice(0, Math.max(0, maxLength - 1)).trimEnd()}…`;
-}
-
 function buildEmbeds(records: TraceSubmission[], agentName: string, submittedAt: string) {
   const worldDateTime = getWorldDateTimePresentation(submittedAt);
   const dateLabel = worldDateTime ? `${worldDateTime.label} UTC` : "";
   const title = "WATCHTOWER // TRACE BATCH";
-  const submitter = `Submitted by ${escapeDiscordText(agentName, 80)}${dateLabel ? ` · ${dateLabel}` : ""}`;
+  const submitter = `Submitted by ${escapeDiscordText(agentName, 80, true)}${dateLabel ? ` · ${dateLabel}` : ""}`;
   const description = `${submitter}\n${records.length} trace${records.length === 1 ? "" : "s"} submitted.`;
 
   const fieldNames = records.map((record, index) =>
-    `#${index + 1} ${escapeDiscordText(record.target_name, 220)}`
+    `#${index + 1} ${escapeDiscordText(record.target_name, 220, true)}`
   );
   const continuedTitle = "WATCHTOWER // CONTINUED";
   const baseValueLength = "S: \nA: ".length + "\n────────────────────────".length + 4;
@@ -59,11 +44,11 @@ function buildEmbeds(records: TraceSubmission[], agentName: string, submittedAt:
     const fixedValue = "S: \nA: ".length + notePrefix.length + "\n────────────────────────".length;
     const detailsBudget = Math.max(0, perRecordBudget - fixedValue);
     const statusBudget = Math.min(40, Math.floor(detailsBudget * 0.3));
-    const status = escapeDiscordText(record.status, statusBudget);
+    const status = escapeDiscordText(record.status, statusBudget, true);
     const affiliationBudget = Math.min(60, Math.floor((detailsBudget - status.length) * 0.45));
-    const affiliation = escapeDiscordText(record.affiliation, affiliationBudget);
+    const affiliation = escapeDiscordText(record.affiliation, affiliationBudget, true);
     const noteBudget = hasNote ? Math.max(0, detailsBudget - status.length - affiliation.length) : 0;
-    const note = hasNote ? escapeDiscordText(record.note, noteBudget) : "";
+    const note = hasNote ? escapeDiscordText(record.note, noteBudget, true) : "";
     const value = [
       `S: ${status}`,
       `A: ${affiliation}`,

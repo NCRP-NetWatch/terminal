@@ -1,4 +1,4 @@
-import { getWorldDateSortValue } from "./dates.js";
+import { getWorldDateSortValue } from "../dates.js";
 
 const ENTRY_TYPES = new Set(["INITIAL_DEPOSIT", "ACTUAL", "DEPOSIT", "ENCUMBRANCE", "LIQUIDATION", "PURCHASE", "CREDIT"]);
 function cents(amount) {
@@ -33,6 +33,20 @@ const commitmentKey = (row) => [
 
 const commitmentMapKey = (row) => JSON.stringify(commitmentKey(row));
 
+function summarizeFunds(rows) {
+  const totals = rows.reduce((total, row) => {
+    total.totalEncumbered += row.encumbered;
+    if (row.actuals !== undefined) {
+      total.totalActuals += row.actuals;
+      total.fundedEncumbered = (total.fundedEncumbered ?? Number.NaN) + row.encumbered;
+      total.totalAvailable += row.available;
+    }
+    return total;
+  }, { totalEncumbered: 0, totalActuals: 0, totalAvailable: 0 });
+  for (const key of Object.keys(totals)) totals[key] = dollars(cents(totals[key]));
+  return totals;
+}
+
 export function getOpenCommitments(rows) {
   const commitments = new Map();
   for (const row of Array.isArray(rows) ? rows : []) {
@@ -52,41 +66,42 @@ function rowTime(row, index) {
   return value ?? Number.MAX_SAFE_INTEGER + index;
 }
 
-function getFundHistory(rows, fundCode) {
-  return rows
-    .map((row, index) => ({ row, index }))
-    .filter(({ row }) => String(row.fund_code ?? "").trim().toUpperCase() === fundCode)
-    .sort((a, b) => {
-      const timeOrder = rowTime(a.row, a.index) - rowTime(b.row, b.index);
-      if (timeOrder) return timeOrder;
-      const leftId = String(a.row.id ?? a.index).toLowerCase();
-      const rightId = String(b.row.id ?? b.index).toLowerCase();
-      return leftId < rightId ? -1 : leftId > rightId ? 1 : 0;
-    })
-    .map(({ row }) => row);
+function compareLedgerRows(a, b) {
+  const timeOrder = a.time - b.time;
+  if (timeOrder) return timeOrder;
+  const leftId = String(a.row.id ?? a.index).toLowerCase();
+  const rightId = String(b.row.id ?? b.index).toLowerCase();
+  return leftId < rightId ? -1 : leftId > rightId ? 1 : 0;
 }
 
 export function aggregateBudgetRows(rows, { fundCode } = {}) {
   const entries = Array.isArray(rows) ? rows : [];
-  const funds = new Set();
-  for (const row of entries) {
+  const histories = new Map();
+  for (const [index, row] of entries.entries()) {
     const fund = String(row.fund_code ?? "").trim().toUpperCase();
-    if (fund) funds.add(fund);
+    if (!fund) continue;
+    const history = histories.get(fund) ?? [];
+    history.push({ row, index, time: rowTime(row, index) });
+    histories.set(fund, history);
   }
   const selectedFund = fundCode === undefined || fundCode === ""
     ? undefined
     : String(fundCode).trim().toUpperCase();
   const summary = [];
 
-  for (const fund of funds) {
+  for (const [fund, indexedHistory] of histories) {
     if (selectedFund && fund !== selectedFund) continue;
-    const history = getFundHistory(entries, fund);
+    indexedHistory.sort(compareLedgerRows);
+    const history = indexedHistory.map(({ row }) => row);
     const initialDeposit = history.find(isInitialDeposit);
     const hasInitialDeposit = Boolean(initialDeposit);
     const initialIndex = initialDeposit ? history.indexOf(initialDeposit) : -1;
-    const actualEntry = initialDeposit
-      ? history.slice(initialIndex + 1).filter((row) => row.entry_type === "ACTUAL").at(-1)
-      : undefined;
+    let actualEntry;
+    if (initialDeposit) {
+      for (let index = initialIndex + 1; index < history.length; index += 1) {
+        if (history[index].entry_type === "ACTUAL") actualEntry = history[index];
+      }
+    }
     const balanceEntry = actualEntry || initialDeposit;
     const balanceIndex = balanceEntry ? history.indexOf(balanceEntry) : -1;
     const actualsCents = hasInitialDeposit
@@ -125,18 +140,15 @@ export function aggregateBudgetRows(rows, { fundCode } = {}) {
   }
 
   summary.sort((a, b) => textCompare(a.fund_code, b.fund_code));
-  const totals = summary.reduce((total, row) => {
-    total.totalEncumbered += row.encumbered;
-    if (row.actuals !== undefined) {
-      total.totalActuals += row.actuals;
-      total.fundedEncumbered += row.encumbered;
-      total.totalAvailable += row.available;
-    }
-    return total;
-  }, { totalEncumbered: 0, totalActuals: 0, totalAvailable: 0 });
-  for (const key of Object.keys(totals)) totals[key] = dollars(cents(totals[key]));
+  return { rows: summary, ...summarizeFunds(summary) };
+}
 
-  return { rows: summary, ...totals };
+export function filterBudgetSummary(summary, fundCode) {
+  const selectedFund = String(fundCode ?? "").trim().toUpperCase();
+  if (!selectedFund) return summary;
+
+  const rows = summary.rows.filter((row) => row.fund_code === selectedFund);
+  return { rows, ...summarizeFunds(rows) };
 }
 
 export function getAuditTrail(rows, { fiscalYear, fundCode, division, objectCode, purchaseId } = {}) {

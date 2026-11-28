@@ -1,24 +1,5 @@
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
-  "Access-Control-Allow-Methods": "POST, OPTIONS"
-};
-
-function jsonResponse(body: unknown, status: number) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json; charset=utf-8" }
-  });
-}
-
-function escapeDiscordText(value: unknown, maxLength = 120) {
-  return String(value ?? "")
-    .replace(/@/g, "＠")
-    .replace(/[\\`*_{}\[\]()<>#+\-.!|~]/g, "\\$&")
-    .replace(/[\r\n\t]+/g, " ")
-    .trim()
-    .slice(0, maxLength);
-}
+import { escapeDiscordText } from "../_shared/discord.js";
+import { corsHeaders, jsonResponse } from "../_shared/http.js";
 
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });

@@ -1,19 +1,13 @@
-import { createWatchtowerNode } from "./nodes/watchtower.js";
-import { createLibraryNode } from "./nodes/library.js";
-import { createSchoolhouseNode } from "./nodes/schoolhouse.js";
-import { createBadgeSection } from "./nodes/badge-section.js";
-import { createCommandNode } from "./nodes/command.js";
+import { createWatchtowerNode } from "./nodes/watchtower/index.js";
+import { createLibraryNode } from "./nodes/library/index.js";
+import { createSchoolhouseNode } from "./nodes/schoolhouse/index.js";
+import { createBadgeSection } from "./nodes/library/badge-section.js";
+import { createCommandNode } from "./nodes/command/index.js";
 import { loadBadge, loadBadgeEntries, namespaceBadgeSvgIds, renderBadgeSvg } from "./nodes/badges.js";
-import { formatRank, getBadgeIdForRank, hasProfileFlag, isAuthorizedRank, isProbationaryRank, isReadOnlyRank, isTraceOnlyRank, normalizeRank } from "./nodes/ranks.js";
+import { NODE_CATALOG as NODES, getAllowedNodes } from "./nodes/catalog.js";
+import { formatRank, getBadgeIdForRank, hasProfileFlag, isProbationaryRank, isReadOnlyRank } from "./nodes/ranks.js";
 import { renderNavButtons } from "./nodes/navigation.js";
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "./supabase-config.js";
-
-const NODES = [
-  { id: "command", label: "NODE-0X-COMMAND", title: "Command", description: "Personnel controls, budget ledger, and budget forms." },
-  { id: "watchtower", label: "NODE-01-WATCHTOWER", title: "Watchtower", description: "Authoritative record of successful traces and high-priority investigations." },
-  { id: "library", label: "NODE-02-LIBRARY", title: "Library", description: "Administrative records, personnel records, access tokens, equipment logs, fines, and acting designations." },
-  { id: "schoolhouse", label: "NODE-03-SCHOOLHOUSE", title: "Schoolhouse", description: "Isolated training simulations and compliance exercises." }
-];
 
 const authGateEl = document.getElementById("authGate");
 const authMessageEl = document.getElementById("authMessage");
@@ -144,19 +138,6 @@ function clearTerminalData() {
   command.setData([]);
   nodeNavEl.replaceChildren();
   subNavEl.replaceChildren();
-}
-
-function getAllowedNodes(profile) {
-  if (!isAuthorizedRank(profile.rank)) return [];
-  if (isTraceOnlyRank(profile.rank)) return NODES.filter((node) => node.id === "watchtower");
-  if (isProbationaryRank(profile.rank)) {
-    return NODES.filter((node) => ["watchtower", "library", "schoolhouse"].includes(node.id));
-  }
-  if (normalizeRank(profile.rank) === "ncpd command") return NODES;
-  return NODES.filter((node) => node.id !== "command"
-    || hasProfileFlag(profile, "COMMAND")
-    || hasProfileFlag(profile, "FINANCE")
-    || !isReadOnlyRank(profile.rank));
 }
 
 function renderNodeNav(profile, activeId = activeNodeId) {

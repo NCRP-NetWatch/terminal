@@ -281,15 +281,19 @@ button.active {
   background: transparent;
 }
 
+.placeholder-panel,
+.watchtower-status-key {
+  padding: 20px;
+  border: 1px solid rgba(var(--rgb-accent), 0.38);
+  background: rgba(var(--rgb-panel-wash), 0.72);
+}
+
 .placeholder-panel {
   display: grid;
   gap: 12px;
   width: 100%;
   max-width: 400px;
   box-sizing: border-box;
-  padding: 20px;
-  border: 1px solid rgba(var(--rgb-accent), 0.38);
-  background: rgba(var(--rgb-panel-wash), 0.72);
 }
 
 .placeholder-panel h2 {
@@ -459,14 +463,18 @@ tbody tr.row-status-neutral {
   background: linear-gradient(90deg, rgba(var(--rgb-white), 0.02), rgba(var(--rgb-white), 0.06) 68%, rgba(var(--rgb-white), 0.025)), var(--color-surface);
 }
 
+.status-hostile,
+.status-monitored,
+.status-contained {
+  font-weight: 700;
+}
+
 .status-hostile {
   color: var(--color-status-hostile);
-  font-weight: 700;
 }
 
 .status-monitored {
   color: var(--color-status-monitored);
-  font-weight: 700;
 }
 
 .status-neutral {
@@ -476,7 +484,6 @@ tbody tr.row-status-neutral {
 
 .status-contained {
   color: var(--color-status-contained);
-  font-weight: 700;
 }
 
 .person-name {
@@ -803,12 +810,6 @@ tbody tr.row-status-neutral {
   min-width: 0;
 }
 
-.watchtower-status-key {
-  padding: 20px;
-  border: 1px solid rgba(var(--rgb-accent), 0.38);
-  background: rgba(var(--rgb-panel-wash), 0.72);
-}
-
 .watchtower-status-key h3 {
   margin: 0 0 18px;
   color: var(--color-accent-bright);
@@ -882,66 +883,17 @@ tbody tr.row-status-neutral {
   table-layout: fixed;
 }
 
-.budget-purchase-requests-table th,
-.budget-purchase-requests-table td {
+.budget-purchase-requests-table th {
   overflow-wrap: anywhere;
 }
 
 .budget-purchase-requests-table td {
+  overflow-wrap: anywhere;
   vertical-align: top;
 }
 
 .budget-purchase-requests-table td input {
   max-width: 100%;
-}
-
-@media (max-width: 760px) {
-  .budget-purchase-requests-table,
-  .budget-purchase-requests-table tbody {
-    display: block;
-  }
-
-  .budget-purchase-requests-table thead {
-    display: none;
-  }
-
-  .budget-purchase-requests-table tr {
-    display: block;
-    margin-bottom: 12px;
-    border: 1px solid rgba(var(--rgb-accent), 0.35);
-    background: var(--color-surface);
-  }
-
-  .budget-purchase-requests-table td {
-    display: grid;
-    grid-template-columns: minmax(6.5rem, 30%) minmax(0, 1fr);
-    gap: 10px;
-    border: 0;
-    border-bottom: 1px solid rgba(var(--rgb-accent), 0.16);
-    padding: 8px;
-    overflow-wrap: anywhere;
-  }
-
-  .budget-purchase-requests-table td:last-child {
-    border-bottom: 0;
-  }
-
-  .budget-purchase-requests-table td[data-label]::before {
-    content: attr(data-label);
-    color: var(--color-accent-bright);
-    font-weight: 600;
-  }
-
-  .budget-purchase-requests-table td[colspan] {
-    display: block;
-  }
-
-  .budget-purchase-requests-table td input,
-  .budget-purchase-requests-table td button {
-    min-width: 0;
-    max-width: 100%;
-    margin-top: 4px;
-  }
 }
 
 .trace-recorder-table input,
@@ -997,6 +949,38 @@ tbody tr.row-status-neutral {
 .trace-recorder-message:empty {
   min-height: 0;
   margin: 0;
+}
+
+#commandBudgetContent [data-budget-totals] {
+  padding: 12px;
+  border-left: 2px solid var(--color-accent);
+  background: rgba(var(--rgb-accent), 0.045);
+  color: var(--color-highlight);
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+.budget-status-cell {
+  text-align: center;
+}
+
+.budget-status {
+  display: inline-block;
+  padding: 3px 7px;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+#commandBudgetEntryContent .ledger-entry-guidance {
+  display: block;
+  max-width: 240px;
+  margin-top: 5px;
+  color: var(--color-accent-bright);
+  font-size: 0.76rem;
+  line-height: 1.4;
 }
 
 @media (forced-colors: active) {
@@ -1118,15 +1102,18 @@ button:disabled {
   opacity: 0.65;
 }
 
+.auth-signout,
+#signOutBtn {
+  border-color: rgba(var(--rgb-accent-bright), 0.38);
+}
+
 .auth-signout {
   margin-top: 10px;
-  border-color: rgba(var(--rgb-accent-bright), 0.38);
 }
 
 #signOutBtn {
   flex: 0 0 auto;
   padding: 5px 10px;
-  border-color: rgba(var(--rgb-accent-bright), 0.38);
   font-size: 16px;
 }
 
@@ -1135,12 +1122,64 @@ button:disabled {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .preview {
-    max-width: 900px;
-  }
-
+  .preview,
   .placeholder-panel {
     max-width: 900px;
+  }
+}
+
+@media (max-width: 1120px) {
+  .trace-recorder-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .budget-purchase-requests-table,
+  .budget-purchase-requests-table tbody {
+    display: block;
+  }
+
+  .budget-purchase-requests-table thead {
+    display: none;
+  }
+
+  .budget-purchase-requests-table tr {
+    display: block;
+    margin-bottom: 12px;
+    border: 1px solid rgba(var(--rgb-accent), 0.35);
+    background: var(--color-surface);
+  }
+
+  .budget-purchase-requests-table td {
+    display: grid;
+    grid-template-columns: minmax(6.5rem, 30%) minmax(0, 1fr);
+    gap: 10px;
+    border: 0;
+    border-bottom: 1px solid rgba(var(--rgb-accent), 0.16);
+    padding: 8px;
+    overflow-wrap: anywhere;
+  }
+
+  .budget-purchase-requests-table td:last-child {
+    border-bottom: 0;
+  }
+
+  .budget-purchase-requests-table td[data-label]::before {
+    content: attr(data-label);
+    color: var(--color-accent-bright);
+    font-weight: 600;
+  }
+
+  .budget-purchase-requests-table td[colspan] {
+    display: block;
+  }
+
+  .budget-purchase-requests-table td input,
+  .budget-purchase-requests-table td button {
+    min-width: 0;
+    max-width: 100%;
+    margin-top: 4px;
   }
 }
 
@@ -1171,42 +1210,4 @@ button:disabled {
     width: 38px;
     height: 42px;
   }
-}
-
-@media (max-width: 1120px) {
-  .trace-recorder-layout {
-    grid-template-columns: 1fr;
-  }
-}
-
-#commandBudgetContent [data-budget-totals] {
-  padding: 12px;
-  border-left: 2px solid var(--color-accent);
-  background: rgba(var(--rgb-accent), 0.045);
-  color: var(--color-highlight);
-  font-family: "Segoe UI", system-ui, sans-serif;
-  font-variant-numeric: tabular-nums;
-}
-
-.budget-status-cell {
-  text-align: center;
-}
-
-.budget-status {
-  display: inline-block;
-  padding: 3px 7px;
-  border: 1px solid currentColor;
-  border-radius: 2px;
-  font-size: 0.78rem;
-  letter-spacing: 0.06em;
-  white-space: nowrap;
-}
-
-#commandBudgetEntryContent .ledger-entry-guidance {
-  display: block;
-  max-width: 240px;
-  margin-top: 5px;
-  color: var(--color-accent-bright);
-  font-size: 0.76rem;
-  line-height: 1.4;
 }

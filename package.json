@@ -1,0 +1,13 @@
+{
+  "name": "ncrpnetwatch-terminal",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "check:js": "node scripts/check-js.mjs",
+    "check": "npm run check:js && npm test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

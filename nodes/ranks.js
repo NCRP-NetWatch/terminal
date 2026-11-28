@@ -6,8 +6,8 @@ const RANKS = new Map([
   ["probationary agent", { badgeId: "probationary-agent", level: 2 }],
   ["ncrp staff", { badgeId: null, level: 1 }],
   ["ncpd command", { badgeId: null, level: 1 }],
-  ["ncpd detective", { badgeId: null, level: 1 }]
-  ["unassigned", { badgeId: null, level: 1 }],
+  ["ncpd detective", { badgeId: null, level: 1 }],
+  ["unassigned", { badgeId: null, level: 1 }]
 ]);
 
 export const RANK_LABELS = [...RANKS.keys()].map((rank) =>

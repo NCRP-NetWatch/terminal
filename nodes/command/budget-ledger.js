@@ -49,12 +49,35 @@ function summarizeFunds(rows) {
 
 export function getOpenCommitments(rows) {
   const commitments = new Map();
+  const legacyPairs = new Map();
   for (const row of Array.isArray(rows) ? rows : []) {
-    if (!["ENCUMBRANCE", "LIQUIDATION"].includes(row.entry_type) || !row.ref_id) continue;
+    if (!["LIQUIDATION", "PURCHASE"].includes(row.entry_type) || !row.ref_id || !row.created_at) continue;
+    const pairKey = JSON.stringify([
+      commitmentMapKey(row),
+      String(row.created_at),
+      amountCents(row)
+    ]);
+    const counts = legacyPairs.get(pairKey) || { liquidation: 0, purchase: 0, amount: amountCents(row) };
+    if (row.entry_type === "LIQUIDATION") counts.liquidation += 1;
+    else counts.purchase += 1;
+    legacyPairs.set(pairKey, counts);
+  }
+
+  for (const row of Array.isArray(rows) ? rows : []) {
+    if (!["ENCUMBRANCE", "LIQUIDATION", "PURCHASE"].includes(row.entry_type) || !row.ref_id) continue;
     const key = commitmentMapKey(row);
     const commitment = commitments.get(key) || { ...row, amountCents: 0 };
-    commitment.amountCents += row.entry_type === "ENCUMBRANCE" ? amountCents(row) : -amountCents(row);
+    if (row.entry_type === "ENCUMBRANCE") commitment.amountCents += amountCents(row);
+    else commitment.amountCents -= amountCents(row);
     commitments.set(key, commitment);
+  }
+  for (const [pairKey, counts] of legacyPairs) {
+    const pairedAmount = Math.min(counts.liquidation, counts.purchase) * counts.amount;
+    if (!pairedAmount) continue;
+    const pair = JSON.parse(pairKey);
+    if (!pair) continue;
+    const commitment = commitments.get(pair[0]);
+    if (commitment) commitment.amountCents += pairedAmount;
   }
   return [...commitments.values()]
     .filter((item) => item.amountCents > 0)
@@ -261,7 +284,9 @@ export function validateLedgerBatch(entries, existingRows = [], activeNodeNames 
       state.cash = amount;
       return;
     }
-    if (["ENCUMBRANCE", "PURCHASE", "CREDIT"].includes(entry.entry_type) && amount > available) {
+    const openAmount = state.commitments.get(key) || 0;
+    const heldAmountApplied = entry.entry_type === "PURCHASE" ? Math.min(amount, openAmount) : 0;
+    if (["ENCUMBRANCE", "PURCHASE", "CREDIT"].includes(entry.entry_type) && amount > available + heldAmountApplied) {
       errors.push(entry.entry_type === "CREDIT"
         ? "Row " + number + ": withdrawal exceeds the fund's available balance."
         : "Row " + number + ": amount exceeds the fund's available balance.");
@@ -275,7 +300,10 @@ export function validateLedgerBatch(entries, existingRows = [], activeNodeNames 
       } else {
         state.commitments.set(key, amountOpen - amount);
       }
-    } else if (["PURCHASE", "CREDIT"].includes(entry.entry_type)) {
+    } else if (entry.entry_type === "PURCHASE") {
+      state.commitments.set(key, openAmount - heldAmountApplied);
+      state.cash -= amount;
+    } else if (entry.entry_type === "CREDIT") {
       state.cash -= amount;
     } else if (entry.entry_type === "DEPOSIT") {
       state.cash += amount;

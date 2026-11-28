@@ -147,6 +147,8 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
           ? "CASH BALANCE"
           : row.entry_type === "CREDIT"
             ? "WITHDRAW MONEY"
+            : row.entry_type === "LIQUIDATION"
+              ? "HOLD RELEASED"
             : row.entry_type;
       title.textContent = `${entryLabel} — ${formatAmount(Number(row.amount))}`;
       memo.className = "note-meta";

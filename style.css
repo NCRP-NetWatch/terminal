@@ -325,8 +325,7 @@ button.active {
 
 .placeholder-field input,
 .trace-recorder-table input,
-.trace-recorder-table textarea,
-.agent-name-form input {
+.trace-recorder-table textarea {
   width: 100%;
   box-sizing: border-box;
   border-radius: 0;
@@ -1061,6 +1060,11 @@ tbody tr.row-status-neutral {
 }
 
 .agent-name-form input {
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 0;
+  background: var(--color-input);
+  color: var(--color-text);
   padding: 10px 12px;
   border: 1px solid rgba(var(--rgb-accent), 0.65);
   outline: none;

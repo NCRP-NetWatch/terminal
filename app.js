@@ -146,7 +146,6 @@ function renderNodeNav(profile, activeId = activeNodeId) {
     activeId,
     onSelect: (nodeId) => nodeId === "home" ? showHome() : void renderNode(nodeId)
   });
-  return accessibleNodes;
 }
 
 function showHome() {

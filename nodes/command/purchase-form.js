@@ -263,13 +263,13 @@ export function createPurchaseForm({
         message.textContent = "Amount exceeds the open purchase balance.";
         return;
       }
-      const release = {
+      const purchaseEntry = {
         fiscal_year: fiscalYear,
         fund_code: purchase.fund_code,
         division: purchase.division,
         object_code: purchase.object_code,
         ref_id: purchase.ref_id,
-        entry_type: "LIQUIDATION",
+        entry_type: action === "pay" ? "PURCHASE" : "LIQUIDATION",
         amount,
         memo: reason
       };
@@ -278,10 +278,10 @@ export function createPurchaseForm({
           message.textContent = "Amount exceeds the Fund's cash balance.";
           return;
         }
-        entries = [release, { ...release, entry_type: "PURCHASE", memo: reason }];
+        entries = [purchaseEntry];
         successText = `Payment recorded for Purchase ID ${purchase.ref_id}.`;
       } else {
-        entries = [release];
+        entries = [purchaseEntry];
         successText = `Commitment released for Purchase ID ${purchase.ref_id}.`;
       }
     } else if (action === "addMoney") {

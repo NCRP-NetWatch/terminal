@@ -107,7 +107,7 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
       fundButton.type="button";fundButton.className="person-name";fundButton.textContent=r.fund_code;fundButton.setAttribute("aria-label","View budget history for fund "+r.fund_code);
       fundButton.addEventListener("click",()=>openAudit({fundCode:r.fund_code}));fundCell.append(fundButton);
       amount.textContent=r.available===undefined?"—":formatAmount(r.available);badge.className="budget-status status-"+statusClass;badge.textContent=r.status;availableCell.className="budget-available";availableCell.append(amount,badge);
-      tr.append(fundCell,cell(formatAmount(r.encumbered)),cell(r.node||"—"),cell(r.actuals===undefined?"—":formatAmount(r.actuals)),availableCell,cell(r.percentCredited===undefined?"—":(r.percentCredited*100).toFixed(1)+"%"));
+      tr.append(fundCell,cell(r.node||"—"),cell(r.actuals===undefined?"—":formatAmount(r.actuals)),cell(formatAmount(r.encumbered)),availableCell,cell(r.percentCredited===undefined?"—":(r.percentCredited*100).toFixed(1)+"%"));
       return tr;
     }));
     budgetStatus.textContent=shown.length+" funds shown.";

@@ -9,7 +9,7 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
   const budgetBody=budgetContentEl.querySelector("[data-budget-body]"),budgetStatus=budgetContentEl.querySelector("[data-budget-status]"),fundFilter=budgetContentEl.querySelector("[data-budget-fund]"),search=budgetContentEl.querySelector("[data-budget-search]"),sort=budgetContentEl.querySelector("[data-budget-sort]"),totals=budgetContentEl.querySelector("[data-budget-totals]");
   const entryRows=entryContentEl.querySelector("[data-ledger-entry-rows]"),entryMessage=entryContentEl.querySelector("[data-ledger-entry-message]"),addRow=entryContentEl.querySelector("[data-add-ledger-row]"),entryForm=entryContentEl.querySelector("[data-ledger-entry-form]");
   const budgetForm=budgetFormContentEl.querySelector("[data-budget-form]"),purchaseAction=budgetForm.querySelector("[data-purchase-action]"),newPurchaseFields=budgetForm.querySelector("[data-new-purchase-fields]"),existingPurchaseField=budgetForm.querySelector("[data-existing-purchase-field]"),purchaseFund=budgetForm.querySelector("[data-purchase-fund]"),purchaseNode=budgetForm.querySelector("[data-purchase-node]"),purchaseObject=budgetForm.querySelector("[data-purchase-object]"),openPurchase=budgetForm.querySelector("[data-purchase-open]"),purchaseAmount=budgetForm.querySelector("[data-purchase-amount]"),purchaseReason=budgetForm.querySelector("[data-purchase-reason]"),purchaseSummary=budgetForm.querySelector("[data-purchase-summary]"),purchaseMessage=budgetForm.querySelector("[data-purchase-message]"),purchaseSubmit=budgetForm.querySelector("[data-purchase-submit]");
-  const purchaseRequestsBody=budgetForm.querySelector("[data-purchase-requests]"),purchaseFundSuggestions=budgetForm.querySelector("#purchaseFundSuggestions");
+  const purchaseRequestsBody=budgetFormContentEl.querySelector("[data-purchase-requests]"),purchaseFundSuggestions=budgetForm.querySelector("#purchaseFundSuggestions");
   const lists={fund_code:entryContentEl.querySelector("#budgetFundSuggestions"),object_code:budgetForm.querySelector("#budgetObjectSuggestions")};
   const amountFormat=new Intl.NumberFormat(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
   const formatAmount=value=>"€$"+amountFormat.format(value);
@@ -98,14 +98,14 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
     const shown=result.rows.filter(r=>[r.fund_code,r.node].join(" ").toLocaleLowerCase().includes(q));
     shown.sort((a,b)=>{const x=a[parts[0]],y=b[parts[0]],d=typeof x==="number"?x-y:String(x||"").localeCompare(String(y||""),undefined,{numeric:true,sensitivity:"base"});return parts[1]==="desc"?-d:d;});
     budgetBody.replaceChildren(...shown.map(r=>{
-      const tr=document.createElement("tr"), availableCell=document.createElement("td"), amount=document.createElement("span"), badge=document.createElement("span");
+      const tr=document.createElement("tr"), availableCell=document.createElement("td"), statusCell=document.createElement("td"), badge=document.createElement("span");
       const statusClass={"OVER COMMITTED":"hostile","NEAR LIMIT":"monitored","FULLY COMMITTED":"monitored","AVAILABLE":"contained","NO INITIAL DEPOSIT":"neutral"}[r.status];
       tr.classList.add({hostile:"row-status-hostile",monitored:"row-status-monitored",contained:"row-status-contained",neutral:"row-status-neutral"}[statusClass]);
       const fundCell=document.createElement("td"),fundButton=document.createElement("button");
       fundButton.type="button";fundButton.className="person-name";fundButton.textContent=r.fund_code;fundButton.setAttribute("aria-label","View budget history for fund "+r.fund_code);
       fundButton.addEventListener("click",()=>openAudit({fundCode:r.fund_code}));fundCell.append(fundButton);
-      amount.textContent=r.available===undefined?"—":formatAmount(r.available);badge.className="budget-status status-"+statusClass;badge.textContent=r.status;availableCell.className="budget-status-cell";availableCell.append(amount,badge);
-      tr.append(fundCell,cell(r.node||"—"),cell(r.actuals===undefined?"—":formatAmount(r.actuals)),cell(formatAmount(r.encumbered)),availableCell,cell(r.percentCredited===undefined?"—":(r.percentCredited*100).toFixed(1)+"%"));
+      availableCell.textContent=r.available===undefined?"—":formatAmount(r.available);badge.className="budget-status status-"+statusClass;badge.textContent=r.status;statusCell.className="budget-status-cell";statusCell.append(badge);
+      tr.append(fundCell,cell(r.node||"—"),cell(r.actuals===undefined?"—":formatAmount(r.actuals)),cell(formatAmount(r.encumbered)),availableCell,statusCell);
       return tr;
     }));
     budgetStatus.textContent=shown.length+" funds shown.";
@@ -152,7 +152,7 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
   }
   function updatePurchaseSummary() {
     if (!isFinanceUser()) {
-      purchaseSummary.textContent=canSubmitRequest()?"This purchase request will be sent to a FINANCE reviewer for approval.":"This rank cannot submit purchase requests.";
+      purchaseSummary.textContent=canSubmitRequest()?"This budget request will be sent to a FINANCE reviewer for approval.":"This rank cannot submit budget requests.";
       return;
     }
     const action=purchaseAction.value, amount=Number(purchaseAmount.value);
@@ -220,15 +220,17 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
     updatePurchaseFields();
   }
   function renderPurchaseRequests(requests) {
+    const requestColumns=["Submitted","Requester","Purchase","Fund / NODE","OBJCODE","Amount","Reason / review","Status / action"];
+    const labeledCell=(label,value)=>{const element=cell(value);element.dataset.label=label;return element;};
     purchaseRequestsBody.replaceChildren(...requests.map((request)=>{
       const row=document.createElement("tr"),submitted=getWorldDatePresentation(request.submitted_at);
       const requester=profiles.find((profile)=>profile.user_id===request.requested_by)?.agent_name?.trim()
         ||(getCurrentProfile()?.user_id===request.requested_by?getCurrentProfile()?.agent_name?.trim():"")||"Unnamed agent";
       const actionName=request.entry_type==="ENCUMBRANCE"?"Hold funds":"Record paid purchase";
-      row.append(cell(submitted?.label||"Unknown date"),cell(requester),cell(request.purchase_id+" · "+actionName),cell(request.fund_code+" / "+(request.division||"NODE")),cell(request.object_code),cell(formatAmount(Number(request.amount))));
-      const reasonCell=cell(request.memo||"");
+      row.append(labeledCell(requestColumns[0],submitted?.label||"Unknown date"),labeledCell(requestColumns[1],requester),labeledCell(requestColumns[2],request.purchase_id+" · "+actionName),labeledCell(requestColumns[3],request.fund_code+" / "+(request.division||"NODE")),labeledCell(requestColumns[4],request.object_code),labeledCell(requestColumns[5],formatAmount(Number(request.amount))));
+      const reasonCell=labeledCell(requestColumns[6],request.memo||"");
       if(request.review_note)reasonCell.append(document.createElement("br"),document.createTextNode("Review: "+request.review_note));
-      const statusCell=document.createElement("td");
+      const statusCell=labeledCell(requestColumns[7],"");
       const status=document.createElement("strong");status.textContent=request.status;statusCell.append(status);
       if(isFinanceUser()&&request.status==="PENDING"){
         const note=document.createElement("input");note.className="db-search";note.maxLength=500;note.placeholder="Optional review note";note.setAttribute("aria-label","Review note for "+request.purchase_id);
@@ -238,7 +240,7 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
       }
       row.append(reasonCell,statusCell);return row;
     }));
-    if(!requests.length){const row=document.createElement("tr"),empty=cell("No purchase requests.");empty.colSpan=8;row.append(empty);purchaseRequestsBody.append(row);}
+    if(!requests.length){const row=document.createElement("tr"),empty=cell("No budget requests.");empty.colSpan=8;row.append(empty);purchaseRequestsBody.append(row);}
   }
   async function loadPurchaseRequests() {
     const {data,error}=await getSupabaseClient().from("command_budget_purchase_requests")
@@ -249,7 +251,7 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
   }
   async function reviewPurchaseRequest(request,decision,noteInput,button) {
     if(!isFinanceUser())return;
-    button.disabled=true;purchaseMessage.textContent=decision==="APPROVED"?"Approving purchase request…":"Rejecting purchase request…";
+    button.disabled=true;purchaseMessage.textContent=decision==="APPROVED"?"Approving budget request…":"Rejecting budget request…";
     try{
       const {data,error}=await getSupabaseClient().rpc("review_command_purchase_request",{
         p_request_id:request.id,p_decision:decision,p_note:noteInput.value.trim()||null
@@ -263,8 +265,8 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
       }
       await loadPurchaseRequests();
       purchaseMessage.textContent=decision==="APPROVED"
-        ?`Purchase ${request.purchase_id} approved and added to the budget ledger.${notificationFailed?" Discord notification could not be sent.":""}`
-        :`Purchase ${request.purchase_id} rejected.`;
+        ?`Budget request ${request.purchase_id} approved and added to the budget ledger.${notificationFailed?" Discord notification could not be sent.":""}`
+        :`Budget request ${request.purchase_id} rejected.`;
     }catch(error){
       purchaseMessage.textContent=`Could not ${decision.toLowerCase()} the request. ${error.message||"Try again."}`;
       button.disabled=false;
@@ -337,7 +339,7 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
     if(!Number.isFinite(amount)||amount<=0){purchaseMessage.textContent="Enter an amount greater than zero.";return;}
     if(!reason){purchaseMessage.textContent="Enter a reason.";return;}
     if(["commit","payNow"].includes(action)){
-      if(!isFinanceUser()&&!canSubmitRequest()){purchaseMessage.textContent="This rank cannot submit purchase requests.";return;}
+      if(!isFinanceUser()&&!canSubmitRequest()){purchaseMessage.textContent="This rank cannot submit budget requests.";return;}
       const fundCode=purchaseFund.value.trim().toUpperCase(),node=purchaseNode.value,objectCode=purchaseObject.value.trim();
       if(!fundCode){purchaseMessage.textContent="Enter a Fund.";return;}
       if(!activeNodeNames.includes(node)){purchaseMessage.textContent="Choose an active NODE.";return;}

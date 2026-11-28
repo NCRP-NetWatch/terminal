@@ -103,14 +103,14 @@ export function aggregateBudgetRows(rows, { fundCode } = {}) {
       ? [ownerNode]
       : [...new Set(openCommitments.map((item) => String(item.division ?? "").trim()).filter(Boolean))].sort(textCompare);
     const availableCents = hasInitialDeposit ? actualsCents - encumberedCents : undefined;
-    const percentCredited = hasInitialDeposit && actualsCents > 0
+    const heldRatio = hasInitialDeposit && actualsCents > 0
       ? encumberedCents / actualsCents
       : undefined;
     let status = "NO INITIAL DEPOSIT";
     if (hasInitialDeposit) {
       if (availableCents < 0) status = "OVER COMMITTED";
       else if (availableCents === 0) status = "FULLY COMMITTED";
-      else if (percentCredited >= 0.75) status = "NEAR LIMIT";
+      else if (heldRatio >= 0.75) status = "NEAR LIMIT";
       else status = "AVAILABLE";
     }
 
@@ -120,7 +120,6 @@ export function aggregateBudgetRows(rows, { fundCode } = {}) {
       encumbered: dollars(encumberedCents),
       actuals: actualsCents === undefined ? undefined : dollars(actualsCents),
       available: availableCents === undefined ? undefined : dollars(availableCents),
-      percentCredited,
       status
     });
   }
@@ -134,12 +133,8 @@ export function aggregateBudgetRows(rows, { fundCode } = {}) {
       total.totalAvailable += row.available;
     }
     return total;
-  }, { totalEncumbered: 0, totalActuals: 0, totalAvailable: 0, fundedEncumbered: 0 });
+  }, { totalEncumbered: 0, totalActuals: 0, totalAvailable: 0 });
   for (const key of Object.keys(totals)) totals[key] = dollars(cents(totals[key]));
-  totals.percentCredited = totals.totalActuals > 0
-    ? totals.fundedEncumbered / totals.totalActuals
-    : undefined;
-  delete totals.fundedEncumbered;
 
   return { rows: summary, ...totals };
 }

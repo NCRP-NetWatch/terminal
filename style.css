@@ -408,9 +408,10 @@ table {
   width: 100%;
   border-collapse: collapse;
   background: var(--color-surface);
-  font-family: var(--font-body);
+  font-family: "Segoe UI", system-ui, sans-serif;
   font-size: 18px;
   line-height: 1.4;
+  font-variant-numeric: tabular-nums;
 }
 
 th,
@@ -863,6 +864,86 @@ tbody tr.row-status-neutral {
   padding: 5px;
 }
 
+.budget-purchase-log {
+  margin-top: 22px;
+}
+
+.budget-purchase-log > .node-title {
+  margin-bottom: 10px;
+}
+
+.budget-purchase-requests-wrap {
+  overflow: visible;
+}
+
+.budget-purchase-requests-table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.budget-purchase-requests-table th,
+.budget-purchase-requests-table td {
+  overflow-wrap: anywhere;
+}
+
+.budget-purchase-requests-table td {
+  vertical-align: top;
+}
+
+.budget-purchase-requests-table td input {
+  max-width: 100%;
+}
+
+@media (max-width: 760px) {
+  .budget-purchase-requests-table,
+  .budget-purchase-requests-table tbody {
+    display: block;
+  }
+
+  .budget-purchase-requests-table thead {
+    display: none;
+  }
+
+  .budget-purchase-requests-table tr {
+    display: block;
+    margin-bottom: 12px;
+    border: 1px solid rgba(var(--rgb-accent), 0.35);
+    background: var(--color-surface);
+  }
+
+  .budget-purchase-requests-table td {
+    display: grid;
+    grid-template-columns: minmax(6.5rem, 30%) minmax(0, 1fr);
+    gap: 10px;
+    border: 0;
+    border-bottom: 1px solid rgba(var(--rgb-accent), 0.16);
+    padding: 8px;
+    overflow-wrap: anywhere;
+  }
+
+  .budget-purchase-requests-table td:last-child {
+    border-bottom: 0;
+  }
+
+  .budget-purchase-requests-table td[data-label]::before {
+    content: attr(data-label);
+    color: var(--color-accent-bright);
+    font-weight: 600;
+  }
+
+  .budget-purchase-requests-table td[colspan] {
+    display: block;
+  }
+
+  .budget-purchase-requests-table td input,
+  .budget-purchase-requests-table td button {
+    min-width: 0;
+    max-width: 100%;
+    margin-top: 4px;
+  }
+}
+
 .trace-recorder-table input,
 .trace-recorder-table textarea {
   min-width: 0;
@@ -1103,14 +1184,12 @@ button:disabled {
   border-left: 2px solid var(--color-accent);
   background: rgba(var(--rgb-accent), 0.045);
   color: var(--color-highlight);
-  font-family: var(--font-display);
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
 }
 
 .budget-status-cell {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
+  text-align: center;
 }
 
 .budget-status {

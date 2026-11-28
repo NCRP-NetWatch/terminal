@@ -51,6 +51,8 @@ export function createPurchaseRequests({
       if (isFinanceUser() && request.status === "PENDING") {
         const note = document.createElement("input");
         note.className = "db-search";
+        note.name = "review_note";
+        note.autocomplete = "off";
         note.maxLength = 500;
         note.placeholder = "Optional review note";
         note.setAttribute("aria-label", `Review note for ${request.purchase_id}`);

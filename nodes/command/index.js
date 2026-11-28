@@ -213,6 +213,7 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
       }
 
       input.name = name;
+      input.autocomplete = "off";
       input.setAttribute("aria-label", label);
       input.value = values[name] || (name === "fiscal_year" ? String(getWorldFiscalYear()) : "");
       if (name === "memo") {

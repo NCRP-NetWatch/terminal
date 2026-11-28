@@ -24,6 +24,8 @@ export function createAccessManager({ contentEl, getCurrentProfile, isReadOnly, 
       const rankCell = document.createElement("td");
       const rankSelect = document.createElement("select");
       rankSelect.className = "db-sort";
+      rankSelect.name = "rank";
+      rankSelect.autocomplete = "off";
       const currentRank = normalizeRank(profile.rank);
       const targetLevel = getRankLevel(profile.rank);
       rankSelect.setAttribute("aria-label", `Rank for ${profile.agent_name || "unnamed agent"}`);

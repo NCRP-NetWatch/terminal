@@ -45,6 +45,7 @@ export function createTraceRecorder({
       const cell = document.createElement("td");
       const input = document.createElement(field.name === "note" ? "textarea" : "input");
       input.name = field.name;
+      input.autocomplete = "off";
       input.setAttribute("aria-label", field.label);
       input.maxLength = field.maxLength;
       if (suggestionLists[field.name]) input.setAttribute("list", suggestionLists[field.name].id);

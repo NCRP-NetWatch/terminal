@@ -37,13 +37,16 @@ export function createBadgeSection({
     }
 
     item.fieldValues ??= {};
-    for (const token of tokens) {
+    for (const [index, token] of tokens.entries()) {
       const label = document.createElement("label");
       label.className = "placeholder-field";
       label.append(document.createTextNode(token.slice(1, -1)));
 
       const input = document.createElement("input");
       input.type = "text";
+      input.id = `badge-placeholder-${index}`;
+      input.name = token.slice(1, -1).toLowerCase().replace(/[^a-z0-9]+/g, "_");
+      input.autocomplete = "off";
       input.maxLength = 80;
       input.disabled = isReadOnly();
       input.value = item.fieldValues[token] ?? "";

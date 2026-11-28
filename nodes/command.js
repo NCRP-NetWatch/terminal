@@ -12,6 +12,8 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
   const purchaseRequestsBody=purchaseForm.querySelector("[data-purchase-requests]"),purchaseFundSuggestions=purchaseForm.querySelector("#purchaseFundSuggestions");
   const lists={fund_code:entryContentEl.querySelector("#budgetFundSuggestions"),object_code:purchaseForm.querySelector("#budgetObjectSuggestions")};
   const amountFormat=new Intl.NumberFormat(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+  const percentSortOption=sort.querySelector('option[value="usedRate-desc"]');
+  if(percentSortOption){percentSortOption.value="percentCredited-desc";percentSortOption.textContent="% Credited (high first)";}
   const formatAmount=value=>"€$"+amountFormat.format(value);
   const isFinanceUser=()=>hasFinanceAccess()&&!isReadOnly();
   const isCommandUser=()=>hasCommandAccess()&&!isReadOnly();
@@ -93,7 +95,7 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
 
   function renderBudget() {
     const result=aggregateBudgetRows(ledgerRows,{fundCode:fundFilter.value.trim()||undefined});
-    totals.textContent="Starter "+formatAmount(result.totalStarter)+" · Encumbered "+formatAmount(result.totalEncumbered)+" · Actuals "+formatAmount(result.totalActuals)+" · Available "+formatAmount(result.totalAvailable);
+    totals.textContent="Credit "+formatAmount(result.totalEncumbered)+" · Debit "+formatAmount(result.totalActuals)+" · Available "+formatAmount(result.totalAvailable);
     const q=search.value.trim().toLocaleLowerCase(), parts=sort.value.split("-");
     const shown=result.rows.filter(r=>[r.fund_code,r.node].join(" ").toLocaleLowerCase().includes(q));
     shown.sort((a,b)=>{const x=a[parts[0]],y=b[parts[0]],d=typeof x==="number"?x-y:String(x||"").localeCompare(String(y||""),undefined,{numeric:true,sensitivity:"base"});return parts[1]==="desc"?-d:d;});
@@ -105,7 +107,7 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
       fundButton.type="button";fundButton.className="person-name";fundButton.textContent=r.fund_code;fundButton.setAttribute("aria-label","View budget history for fund "+r.fund_code);
       fundButton.addEventListener("click",()=>openAudit({fundCode:r.fund_code}));fundCell.append(fundButton);
       amount.textContent=r.available===undefined?"—":formatAmount(r.available);badge.className="budget-status status-"+statusClass;badge.textContent=r.status;availableCell.className="budget-available";availableCell.append(amount,badge);
-      tr.append(fundCell,cell(r.starter===undefined?"—":formatAmount(r.starter)),cell(r.node||"—"),cell(formatAmount(r.encumbered)),cell(r.actuals===undefined?"—":formatAmount(r.actuals)),availableCell,cell(r.usedRate===undefined?"—":(r.usedRate*100).toFixed(1)+"%"));
+      tr.append(fundCell,cell(formatAmount(r.encumbered)),cell(r.node||"—"),cell(r.actuals===undefined?"—":formatAmount(r.actuals)),availableCell,cell(r.percentCredited===undefined?"—":(r.percentCredited*100).toFixed(1)+"%"));
       return tr;
     }));
     budgetStatus.textContent=shown.length+" funds shown.";
@@ -164,10 +166,10 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
     }
     const fund=getFundSummary(purchaseFund.value);
     if(!fund){purchaseSummary.textContent="Select a Fund with an initial deposit.";return;}
-    const addsCash=["addMoney","credit"].includes(action);
+    const addsCash=action==="addMoney";
     const balanceLabel=addsCash?"Cash":"Available";
     const balance=addsCash?fund.actuals:fund.available;
-    const exceeds=["commit","payNow"].includes(action)&&Number.isFinite(amount)&&amount>fund.available;
+    const exceeds=["commit","payNow","credit"].includes(action)&&Number.isFinite(amount)&&amount>fund.available;
     purchaseSummary.textContent=balanceLabel+" "+formatAmount(balance||0)+(exceeds?" · Amount exceeds balance":"");
   }
   function updatePurchaseFields() {
@@ -271,7 +273,7 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
     }
   }
   async function loadLedger() {
-    const {data,error}=await getSupabaseClient().from("command_budget_ledger").select("id, created_at, fiscal_year, fund_code, division, object_code, ref_id, entry_type, amount, memo, recorded_by").order("created_at",{ascending:true});if(error)throw error;ledgerRows=data||[];renderSuggestions();if(activeView==="budget-ledger")renderBudget();
+    const {data,error}=await getSupabaseClient().from("command_budget_ledger").select("id, created_at, fiscal_year, fund_code, division, object_code, ref_id, entry_type, amount, memo, recorded_by").order("created_at",{ascending:true}).order("id",{ascending:true});if(error)throw error;ledgerRows=data||[];renderSuggestions();if(activeView==="budget-ledger")renderBudget();
   }
   async function sendBudgetNotification(ledgerIds) {
     const {error}=await getSupabaseClient().functions.invoke("command-budget-discord-notify",{body:{ledger_ids:ledgerIds}});
@@ -393,8 +395,7 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
       const fund=getFundSummary(purchaseFund.value.trim().toUpperCase()),node=purchaseNode.value,objectCode=purchaseObject.value.trim();
       if(!fund){purchaseMessage.textContent="Choose a Fund with an initial deposit.";return;}
       if(!node||!objectCode){purchaseMessage.textContent="Choose a NODE and OBJCODE.";return;}
-      if(["commit","payNow"].includes(action)&&amount>fund.available){purchaseMessage.textContent="Amount exceeds the Fund's available balance.";return;}
-      if(action==="credit"&&amount<=0){purchaseMessage.textContent="Enter a credit greater than zero.";return;}
+      if(["commit","payNow","credit"].includes(action)&&amount>fund.available){purchaseMessage.textContent=action==="credit"?"Withdrawal exceeds the Fund's available balance.":"Amount exceeds the Fund's available balance.";return;}
       const purchaseId=createPurchaseId(action==="credit"?"R":"P");
       const entry={id:crypto.randomUUID(),fiscal_year:year,fund_code:fund.fund_code,division:node,object_code:objectCode,ref_id:purchaseId,amount,memo:reason};
       entry.entry_type={commit:"ENCUMBRANCE",payNow:"PURCHASE",credit:"CREDIT"}[action];

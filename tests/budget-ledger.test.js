@@ -20,14 +20,24 @@ const ledger = [
 
 test("initial deposit detection and fund aggregation retain ledger semantics", () => {
   assert.equal(isInitialDeposit(ledger[0]), true);
-  assert.deepEqual(getOpenCommitments(ledger).map(({ fund_code, open_amount }) => [fund_code, open_amount]), [["A", 200]]);
+  assert.deepEqual(getOpenCommitments(ledger).map(({ fund_code, open_amount }) => [fund_code, open_amount]), [["A", 150]]);
   const result = aggregateBudgetRows(ledger);
   assert.deepEqual(result.rows.map(({ fund_code, actuals, encumbered, available, status }) => [fund_code, actuals, encumbered, available, status]), [
-    ["A", 950, 200, 750, "AVAILABLE"],
+    ["A", 950, 150, 800, "AVAILABLE"],
     ["B", 500, 0, 500, "AVAILABLE"]
   ]);
   assert.equal(result.totalActuals, 1450);
   assert.equal(aggregateBudgetRows(ledger, { fundCode: "b" }).rows.length, 1);
+});
+
+test("legacy same-time held-fund payment pairs reduce a commitment only once", () => {
+  const legacyPayment = [
+    { fund_code: "A", division: "NODE-A", object_code: "SUPPLIES", ref_id: "P-2", entry_type: "ENCUMBRANCE", amount: 100 },
+    { fund_code: "A", division: "NODE-A", object_code: "SUPPLIES", ref_id: "P-2", created_at: "2025-02-01T00:00:00Z", entry_type: "LIQUIDATION", amount: 40 },
+    { fund_code: "A", division: "NODE-A", object_code: "SUPPLIES", ref_id: "P-2", created_at: "2025-02-01T00:00:00Z", entry_type: "PURCHASE", amount: 40 }
+  ];
+
+  assert.deepEqual(getOpenCommitments(legacyPayment).map(({ open_amount }) => open_amount), [60]);
 });
 
 test("audit filters preserve chronological ordering", () => {

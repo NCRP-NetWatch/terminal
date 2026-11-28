@@ -43,6 +43,10 @@ export function isTraceOnlyRank(rank) {
   return normalizeRank(rank) === "ncpd detective";
 }
 
+export function isProbationaryRank(rank) {
+  return normalizeRank(rank) === "probationary agent";
+}
+
 export function formatRank(rank) {
   const normalized = normalizeRank(rank);
   if (normalized === "ncrp staff") return "NCRP Staff";

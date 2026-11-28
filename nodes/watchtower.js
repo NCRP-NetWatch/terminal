@@ -42,6 +42,7 @@ export function createWatchtowerNode({
   submitBatchBtn,
   recorderMessageEl,
   onSubmitTraceBatch,
+  isProbationary = () => false,
   isReadOnly = () => false
 }) {
   let records = [];
@@ -139,6 +140,7 @@ export function createWatchtowerNode({
 
   function showPanel(panel) {
     if (isReadOnly()) panel = "database";
+    if (isProbationary() && panel === "database") panel = "recorder";
     activePanel = panel;
     databasePanelEl.hidden = panel !== "database";
     recorderPanelEl.hidden = panel !== "recorder";
@@ -356,7 +358,11 @@ export function createWatchtowerNode({
     show() {
       viewEl.hidden = false;
       if (isReadOnly()) activePanel = "database";
-      renderNavButtons(subNavEl, WATCHTOWER_PANELS.filter((panel) => !isReadOnly() || panel.id === "database"), {
+      renderNavButtons(subNavEl, WATCHTOWER_PANELS.filter((panel) =>
+        isProbationary()
+          ? panel.id === "recorder"
+          : !isReadOnly() || panel.id === "database"
+      ), {
         activeId: activePanel,
         onSelect: showPanel
       });

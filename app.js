@@ -4,7 +4,7 @@ import { createSchoolhouseNode } from "./nodes/schoolhouse.js";
 import { createBadgeSection } from "./nodes/badge-section.js";
 import { createCommandNode } from "./nodes/command.js";
 import { loadBadge, loadBadgeEntries, namespaceBadgeSvgIds, renderBadgeSvg } from "./nodes/badges.js";
-import { formatRank, getBadgeIdForRank, hasProfileFlag, isAuthorizedRank, isReadOnlyRank, isTraceOnlyRank, normalizeRank } from "./nodes/ranks.js";
+import { formatRank, getBadgeIdForRank, hasProfileFlag, isAuthorizedRank, isProbationaryRank, isReadOnlyRank, isTraceOnlyRank, normalizeRank } from "./nodes/ranks.js";
 import { renderNavButtons } from "./nodes/navigation.js";
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "./supabase-config.js";
 
@@ -55,6 +55,7 @@ const watchtower = createWatchtowerNode({
   submitBatchBtn: document.getElementById("submitTraceBatch"),
   recorderMessageEl: document.getElementById("traceRecorderMessage"),
   isReadOnly: () => isReadOnlyRank(currentProfile?.rank),
+  isProbationary: () => isProbationaryRank(currentProfile?.rank),
   onSubmitTraceBatch: submitTraceBatch
 });
 
@@ -148,6 +149,9 @@ function clearTerminalData() {
 function getAllowedNodes(profile) {
   if (!isAuthorizedRank(profile.rank)) return [];
   if (isTraceOnlyRank(profile.rank)) return NODES.filter((node) => node.id === "watchtower");
+  if (isProbationaryRank(profile.rank)) {
+    return NODES.filter((node) => ["watchtower", "library", "schoolhouse"].includes(node.id));
+  }
   if (normalizeRank(profile.rank) === "ncpd command") return NODES;
   return NODES.filter((node) => node.id !== "command"
     || hasProfileFlag(profile, "COMMAND")
@@ -220,6 +224,11 @@ async function loadNodeData(nodeId, generation = sessionGeneration) {
   if (loadedNodes.has(nodeId)) return;
 
   if (nodeId === "watchtower") {
+    if (isProbationaryRank(currentProfile?.rank)) {
+      watchtower.setData([]);
+      loadedNodes.add(nodeId);
+      return;
+    }
     const { data, error } = await supabaseClient
       .from("watchtower_traces")
       .select("name, affiliation, traces, status, notes")

@@ -1106,7 +1106,7 @@ button:disabled {
   font-family: var(--font-display);
 }
 
-.budget-available {
+.budget-status-cell {
   display: flex;
   align-items: center;
   flex-wrap: wrap;

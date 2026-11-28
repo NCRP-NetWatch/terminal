@@ -9,7 +9,7 @@ import { renderNavButtons } from "./nodes/navigation.js";
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "./supabase-config.js";
 
 const NODES = [
-  { id: "command", label: "NODE-0X-COMMAND", title: "Command", description: "Personnel controls, budget ledger, and purchase forms." },
+  { id: "command", label: "NODE-0X-COMMAND", title: "Command", description: "Personnel controls, budget ledger, and budget forms." },
   { id: "watchtower", label: "NODE-01-WATCHTOWER", title: "Watchtower", description: "Authoritative record of successful traces and high-priority investigations." },
   { id: "library", label: "NODE-02-LIBRARY", title: "Library", description: "Administrative records, personnel records, access tokens, equipment logs, fines, and acting designations." },
   { id: "schoolhouse", label: "NODE-03-SCHOOLHOUSE", title: "Schoolhouse", description: "Isolated training simulations and compliance exercises." }
@@ -89,7 +89,7 @@ const command = createCommandNode({
   activeNodeNames: NODES.map((node) => node.label),
   contentEl: document.getElementById("commandAccessContent"),
   budgetContentEl: document.getElementById("commandBudgetContent"),
-  purchaseContentEl: document.getElementById("commandPurchaseContent"),
+  budgetFormContentEl: document.getElementById("commandBudgetFormContent"),
   entryContentEl: document.getElementById("commandBudgetEntryContent"),
   notesDialogEl: document.getElementById("notesDialog"),
   notesTitleEl: document.getElementById("notesTitle"),

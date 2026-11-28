@@ -207,13 +207,14 @@
       </section>
       <section id="commandBudgetContent" hidden aria-labelledby="budgetLedgerTitle">
         <div class="home-overview"><div class="home-welcome"><p class="home-kicker">COMMAND // FINANCE CONTROL</p><h2 id="budgetLedgerTitle" class="node-title">BUDGET LEDGER</h2></div></div>
-        <div class="db-controls"><label>Fund <input class="db-sort" data-budget-fund list="budgetFundFilterSuggestions" placeholder="All funds"></label><datalist id="budgetFundFilterSuggestions"></datalist><input class="db-search" data-budget-search type="search" aria-label="Search budget funds" placeholder="Search fund or NODE"><label class="db-sort-label" for="budgetSort">Sort by</label><select id="budgetSort" class="db-sort" data-budget-sort aria-label="Sort budget funds"><option value="fund_code-asc">Fund (A–Z)</option><option value="available-asc">Available (low first)</option><option value="usedRate-desc">% Used (high first)</option></select></div>
+        <div class="db-controls"><label>Fund <input class="db-sort" data-budget-fund list="budgetFundFilterSuggestions" placeholder="All funds"></label><datalist id="budgetFundFilterSuggestions"></datalist><input class="db-search" data-budget-search type="search" aria-label="Search budget funds" placeholder="Search fund or NODE"><label class="db-sort-label" for="budgetSort">Sort by</label><select id="budgetSort" class="db-sort" data-budget-sort aria-label="Sort budget funds"><option value="fund_code-asc">Fund (A–Z)</option><option value="available-asc">Available (low first)</option><option value="percentCredited-desc">% Credited (high first)</option></select></div>
         <p data-budget-totals aria-live="polite"></p><p class="trace-recorder-message" data-budget-status role="status" aria-live="polite"></p>
-        <div class="trace-recorder-table-wrap"><table aria-label="Fund budget rollup"><thead><tr><th>FUND</th><th>NODE</th><th>DEBIT</th><th>CREDIT</th><th>STATUS</th><th>% CREDITED</th></tr></thead><tbody data-budget-body></tbody></table></div>
+        <div class="trace-recorder-table-wrap"><table aria-label="Fund budget rollup"><thead><tr><th>FUND</th><th>NODE</th><th>GROSS BALANCE</th><th>HELD FUNDS</th><th>STATUS</th><th>% CREDITED</th></tr></thead><tbody data-budget-body></tbody></table></div>
       </section>
-      <section id="commandPurchaseContent" class="trace-recorder" hidden aria-labelledby="purchaseFormTitle">
-        <div class="home-overview"><div class="home-welcome"><p class="home-kicker">COMMAND // PURCHASES</p><h2 id="purchaseFormTitle" class="node-title">PURCHASE FORM</h2></div></div>
-        <form data-purchase-form>
+      <section id="commandBudgetFormContent" class="trace-recorder" hidden aria-labelledby="budgetFormTitle">
+        <div class="home-overview"><div class="home-welcome"><p class="home-kicker">COMMAND // BUDGET</p><h2 id="budgetFormTitle" class="node-title">BUDGET FORM</h2></div></div>
+        <div class="trace-recorder-layout budget-form-layout">
+        <form data-budget-form>
           <datalist id="budgetObjectSuggestions"></datalist><datalist id="purchaseFundSuggestions"></datalist>
           <div class="db-controls">
             <label class="db-sort-label">Action <select class="db-sort" data-purchase-action><option value="addMoney">Add money</option><option value="commit">Hold funds</option><option value="payNow">Record paid purchase</option><option value="pay">Pay Held Funds</option><option value="cancel">Cancel Held Funds</option><option value="credit">Withdraw money</option></select></label>
@@ -234,6 +235,18 @@
           <h3 class="node-title">PURCHASE REQUESTS</h3>
           <div class="trace-recorder-table-wrap"><table class="trace-recorder-table" aria-label="Purchase requests"><thead><tr><th>Submitted</th><th>Requester</th><th>Purchase</th><th>Fund / NODE</th><th>OBJCODE</th><th>Amount</th><th>Reason / review</th><th>Status / action</th></tr></thead><tbody data-purchase-requests></tbody></table></div>
         </form>
+        <aside class="watchtower-status-key budget-action-key" aria-labelledby="budgetActionKeyTitle">
+          <h3 id="budgetActionKeyTitle">BUDGET ACTION KEY</h3>
+          <dl>
+            <div class="status-key-item"><dt>ADD MONEY</dt><dd>Add money to a fund.</dd></div>
+            <div class="status-key-item"><dt>HOLD FUNDS</dt><dd>Set funds aside for one or more future purchases, including purchases paid upon delivery. Non-FINANCE requests take effect after approval.</dd></div>
+            <div class="status-key-item"><dt>RECORD PAID PURCHASE</dt><dd>Record a purchase already paid from the fund. Non-FINANCE submissions require Finance approval.</dd></div>
+            <div class="status-key-item"><dt>PAY HELD FUNDS</dt><dd>Pay an open held purchase and record the payment.</dd></div>
+            <div class="status-key-item"><dt>CANCEL HELD FUNDS</dt><dd>Release an open hold without recording a purchase.</dd></div>
+            <div class="status-key-item"><dt>WITHDRAW MONEY</dt><dd>Take money directly out of a fund and reduce its available balance.</dd></div>
+          </dl>
+        </aside>
+        </div>
       </section>
       <section id="commandBudgetEntryContent" class="trace-recorder" hidden aria-labelledby="modifyBudgetTitle">
         <div class="home-overview"><div class="home-welcome"><p class="home-kicker">COMMAND // BUDGET ADJUSTMENTS</p><h2 id="modifyBudgetTitle" class="node-title">MODIFY BUDGET</h2></div></div>

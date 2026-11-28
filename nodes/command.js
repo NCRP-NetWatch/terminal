@@ -3,17 +3,15 @@ import { getRankLevel, normalizeRank, RANK_LABELS } from "./ranks.js";
 import { getWorldDatePresentation, getWorldFiscalYear } from "./dates.js";
 import { aggregateBudgetRows, getAuditTrail, getOpenCommitments, isInitialDeposit, validateLedgerBatch } from "./budget-ledger.js";
 
-export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl, purchaseContentEl, entryContentEl, notesDialogEl, notesTitleEl, notesListEl, closeNotesEl, activeNodeNames = [], getSupabaseClient, getCurrentProfile, isReadOnly = () => false, hasCommandAccess = () => false, hasFinanceAccess = () => false }) {
+export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl, budgetFormContentEl, entryContentEl, notesDialogEl, notesTitleEl, notesListEl, closeNotesEl, activeNodeNames = [], getSupabaseClient, getCurrentProfile, isReadOnly = () => false, hasCommandAccess = () => false, hasFinanceAccess = () => false }) {
   let profiles = [];
   let ledgerRows=[]; let activeView="access-manager";
   const budgetBody=budgetContentEl.querySelector("[data-budget-body]"),budgetStatus=budgetContentEl.querySelector("[data-budget-status]"),fundFilter=budgetContentEl.querySelector("[data-budget-fund]"),search=budgetContentEl.querySelector("[data-budget-search]"),sort=budgetContentEl.querySelector("[data-budget-sort]"),totals=budgetContentEl.querySelector("[data-budget-totals]");
   const entryRows=entryContentEl.querySelector("[data-ledger-entry-rows]"),entryMessage=entryContentEl.querySelector("[data-ledger-entry-message]"),addRow=entryContentEl.querySelector("[data-add-ledger-row]"),entryForm=entryContentEl.querySelector("[data-ledger-entry-form]");
-  const purchaseForm=purchaseContentEl.querySelector("[data-purchase-form]"),purchaseAction=purchaseForm.querySelector("[data-purchase-action]"),newPurchaseFields=purchaseForm.querySelector("[data-new-purchase-fields]"),existingPurchaseField=purchaseForm.querySelector("[data-existing-purchase-field]"),purchaseFund=purchaseForm.querySelector("[data-purchase-fund]"),purchaseNode=purchaseForm.querySelector("[data-purchase-node]"),purchaseObject=purchaseForm.querySelector("[data-purchase-object]"),openPurchase=purchaseForm.querySelector("[data-purchase-open]"),purchaseAmount=purchaseForm.querySelector("[data-purchase-amount]"),purchaseReason=purchaseForm.querySelector("[data-purchase-reason]"),purchaseSummary=purchaseForm.querySelector("[data-purchase-summary]"),purchaseMessage=purchaseForm.querySelector("[data-purchase-message]"),purchaseSubmit=purchaseForm.querySelector("[data-purchase-submit]");
-  const purchaseRequestsBody=purchaseForm.querySelector("[data-purchase-requests]"),purchaseFundSuggestions=purchaseForm.querySelector("#purchaseFundSuggestions");
-  const lists={fund_code:entryContentEl.querySelector("#budgetFundSuggestions"),object_code:purchaseForm.querySelector("#budgetObjectSuggestions")};
+  const budgetForm=budgetFormContentEl.querySelector("[data-budget-form]"),purchaseAction=budgetForm.querySelector("[data-purchase-action]"),newPurchaseFields=budgetForm.querySelector("[data-new-purchase-fields]"),existingPurchaseField=budgetForm.querySelector("[data-existing-purchase-field]"),purchaseFund=budgetForm.querySelector("[data-purchase-fund]"),purchaseNode=budgetForm.querySelector("[data-purchase-node]"),purchaseObject=budgetForm.querySelector("[data-purchase-object]"),openPurchase=budgetForm.querySelector("[data-purchase-open]"),purchaseAmount=budgetForm.querySelector("[data-purchase-amount]"),purchaseReason=budgetForm.querySelector("[data-purchase-reason]"),purchaseSummary=budgetForm.querySelector("[data-purchase-summary]"),purchaseMessage=budgetForm.querySelector("[data-purchase-message]"),purchaseSubmit=budgetForm.querySelector("[data-purchase-submit]");
+  const purchaseRequestsBody=budgetForm.querySelector("[data-purchase-requests]"),purchaseFundSuggestions=budgetForm.querySelector("#purchaseFundSuggestions");
+  const lists={fund_code:entryContentEl.querySelector("#budgetFundSuggestions"),object_code:budgetForm.querySelector("#budgetObjectSuggestions")};
   const amountFormat=new Intl.NumberFormat(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
-  const percentSortOption=sort.querySelector('option[value="usedRate-desc"]');
-  if(percentSortOption){percentSortOption.value="percentCredited-desc";percentSortOption.textContent="% Credited (high first)";}
   const formatAmount=value=>"€$"+amountFormat.format(value);
   const isFinanceUser=()=>hasFinanceAccess()&&!isReadOnly();
   const isCommandUser=()=>hasCommandAccess()&&!isReadOnly();
@@ -95,7 +93,7 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
 
   function renderBudget() {
     const result=aggregateBudgetRows(ledgerRows,{fundCode:fundFilter.value.trim()||undefined});
-    totals.textContent="Credit "+formatAmount(result.totalEncumbered)+" · Debit "+formatAmount(result.totalActuals)+" · Available "+formatAmount(result.totalAvailable);
+    totals.textContent="Held Funds "+formatAmount(result.totalEncumbered)+" · Gross Balance "+formatAmount(result.totalActuals)+" · Available "+formatAmount(result.totalAvailable);
     const q=search.value.trim().toLocaleLowerCase(), parts=sort.value.split("-");
     const shown=result.rows.filter(r=>[r.fund_code,r.node].join(" ").toLocaleLowerCase().includes(q));
     shown.sort((a,b)=>{const x=a[parts[0]],y=b[parts[0]],d=typeof x==="number"?x-y:String(x||"").localeCompare(String(y||""),undefined,{numeric:true,sensitivity:"base"});return parts[1]==="desc"?-d:d;});
@@ -106,7 +104,7 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
       const fundCell=document.createElement("td"),fundButton=document.createElement("button");
       fundButton.type="button";fundButton.className="person-name";fundButton.textContent=r.fund_code;fundButton.setAttribute("aria-label","View budget history for fund "+r.fund_code);
       fundButton.addEventListener("click",()=>openAudit({fundCode:r.fund_code}));fundCell.append(fundButton);
-      amount.textContent=r.available===undefined?"—":formatAmount(r.available);badge.className="budget-status status-"+statusClass;badge.textContent=r.status;availableCell.className="budget-available";availableCell.append(amount,badge);
+      amount.textContent=r.available===undefined?"—":formatAmount(r.available);badge.className="budget-status status-"+statusClass;badge.textContent=r.status;availableCell.className="budget-status-cell";availableCell.append(amount,badge);
       tr.append(fundCell,cell(r.node||"—"),cell(r.actuals===undefined?"—":formatAmount(r.actuals)),cell(formatAmount(r.encumbered)),availableCell,cell(r.percentCredited===undefined?"—":(r.percentCredited*100).toFixed(1)+"%"));
       return tr;
     }));
@@ -183,8 +181,8 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
     purchaseFund.disabled=usesOpenPurchase;purchaseFund.required=!usesOpenPurchase;
     purchaseNode.disabled=usesOpenPurchase||!needsPurchaseDetails;purchaseNode.required=needsPurchaseDetails;
     purchaseObject.disabled=usesOpenPurchase||!needsPurchaseDetails;purchaseObject.required=needsPurchaseDetails;
-    purchaseForm.querySelector("[data-purchase-node-field]").hidden=!needsPurchaseDetails;
-    purchaseForm.querySelector("[data-purchase-object-field]").hidden=!needsPurchaseDetails;
+    budgetForm.querySelector("[data-purchase-node-field]").hidden=!needsPurchaseDetails;
+    budgetForm.querySelector("[data-purchase-object-field]").hidden=!needsPurchaseDetails;
     openPurchase.disabled=!usesOpenPurchase;
     openPurchase.required=usesOpenPurchase;
     purchaseSubmit.textContent=finance?purchaseAction.options[purchaseAction.selectedIndex].textContent:"Submit for approval";
@@ -364,7 +362,7 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
           await loadLedger();
         }
         await loadPurchaseRequests();
-        purchaseForm.reset();purchaseAction.value="commit";renderSuggestions();
+        budgetForm.reset();purchaseAction.value="commit";renderSuggestions();
         purchaseMessage.textContent=result?.final_status==="APPROVED"
           ?`Purchase ${purchaseId} approved and posted automatically.${notificationFailed?" Discord notification could not be sent.":""}`
           :`Purchase ${purchaseId} submitted for FINANCE approval.`;
@@ -403,12 +401,12 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
       successText=(action==="commit"?"Purchase held":action==="payNow"?"Purchase paid":"Money withdrawn")+" · "+(action==="credit"?"Withdrawal ID ":"Purchase ID ")+purchaseId+".";
     }
     await postLedgerEntries(entries,purchaseMessage,purchaseSubmit,successText,()=>{
-      purchaseForm.reset();renderSuggestions();
+      budgetForm.reset();renderSuggestions();
     });
   }
-  function getAvailableViews(){const views=[];if(canViewPersonnel())views.push("access-manager");if(canViewBudget())views.push("budget-ledger");if(canSubmitRequest()||isFinanceUser()||isCommandUser())views.push("purchase-form");if(isFinanceUser())views.push("modify-budget");return views;}
-  function switchView(id){const available=getAvailableViews();if(!available.includes(id))id=available[0];activeView=id;contentEl.hidden=id!=="access-manager";budgetContentEl.hidden=id!=="budget-ledger";purchaseContentEl.hidden=id!=="purchase-form";entryContentEl.hidden=id!=="modify-budget";if(id==="budget-ledger")renderBudget();}
-  fundFilter.addEventListener("input",renderBudget);search.addEventListener("input",renderBudget);sort.addEventListener("change",renderBudget);addRow.addEventListener("click",()=>entryRows.append(createEntryRow()));entryForm.addEventListener("submit",event=>void submitBatch(event));purchaseForm.addEventListener("submit",event=>void submitPurchase(event));purchaseAction.addEventListener("change",()=>{purchaseAmount.value="";updatePurchaseFields();});purchaseFund.addEventListener("change",()=>{const node=purchaseNodeForFund(purchaseFund.value);if(activeNodeNames.includes(node))purchaseNode.value=node;updatePurchaseSummary();});purchaseNode.addEventListener("change",updatePurchaseSummary);purchaseObject.addEventListener("input",updatePurchaseSummary);purchaseAmount.addEventListener("input",updatePurchaseSummary);openPurchase.addEventListener("change",()=>{const purchase=getOpenPurchase(openPurchase.value);purchaseAmount.value=purchase?String(purchase.open_amount):"";updatePurchaseFields();});closeNotesEl.addEventListener("click",()=>notesDialogEl.close());
+  function getAvailableViews(){const views=[];if(canViewPersonnel())views.push("access-manager");if(canViewBudget())views.push("budget-ledger");if(canSubmitRequest()||isFinanceUser()||isCommandUser())views.push("budget-form");if(isFinanceUser())views.push("modify-budget");return views;}
+  function switchView(id){const available=getAvailableViews();if(!available.includes(id))id=available[0];activeView=id;contentEl.hidden=id!=="access-manager";budgetContentEl.hidden=id!=="budget-ledger";budgetFormContentEl.hidden=id!=="budget-form";entryContentEl.hidden=id!=="modify-budget";if(id==="budget-ledger")renderBudget();}
+  fundFilter.addEventListener("input",renderBudget);search.addEventListener("input",renderBudget);sort.addEventListener("change",renderBudget);addRow.addEventListener("click",()=>entryRows.append(createEntryRow()));entryForm.addEventListener("submit",event=>void submitBatch(event));budgetForm.addEventListener("submit",event=>void submitPurchase(event));purchaseAction.addEventListener("change",()=>{purchaseAmount.value="";updatePurchaseFields();});purchaseFund.addEventListener("change",()=>{const node=purchaseNodeForFund(purchaseFund.value);if(activeNodeNames.includes(node))purchaseNode.value=node;updatePurchaseSummary();});purchaseNode.addEventListener("change",updatePurchaseSummary);purchaseObject.addEventListener("input",updatePurchaseSummary);purchaseAmount.addEventListener("input",updatePurchaseSummary);openPurchase.addEventListener("change",()=>{const purchase=getOpenPurchase(openPurchase.value);purchaseAmount.value=purchase?String(purchase.open_amount):"";updatePurchaseFields();});closeNotesEl.addEventListener("click",()=>notesDialogEl.close());
 
   async function loadProfiles() {
     setStatus("Loading personnel…");
@@ -477,10 +475,10 @@ export function createCommandNode({ viewEl, subNavEl, contentEl, budgetContentEl
     },
     setData(data) {
       profiles = Array.isArray(data) ? data : [];
-      if (!profiles.length) { ledgerRows = []; purchaseRequestsBody.replaceChildren(); subNavEl.replaceChildren(); viewEl.hidden = true; contentEl.hidden = true; budgetContentEl.hidden = true; purchaseContentEl.hidden = true; entryContentEl.hidden = true; return; }
+      if (!profiles.length) { ledgerRows = []; purchaseRequestsBody.replaceChildren(); subNavEl.replaceChildren(); viewEl.hidden = true; contentEl.hidden = true; budgetContentEl.hidden = true; budgetFormContentEl.hidden = true; entryContentEl.hidden = true; return; }
       renderProfiles();
     },
-    show() {viewEl.hidden=false;const labels={"access-manager":"ACCESS MANAGER","budget-ledger":"BUDGET LEDGER","purchase-form":"PURCHASE FORM","modify-budget":"MODIFY BUDGET"};const panels=getAvailableViews().map((id)=>({id,label:labels[id]}));renderNavButtons(subNavEl,panels,{activeId:activeView,onSelect:switchView});switchView(activeView);},
+    show() {viewEl.hidden=false;const labels={"access-manager":"ACCESS MANAGER","budget-ledger":"BUDGET LEDGER","budget-form":"BUDGET FORM","modify-budget":"MODIFY BUDGET"};const panels=getAvailableViews().map((id)=>({id,label:labels[id]}));renderNavButtons(subNavEl,panels,{activeId:activeView,onSelect:switchView});switchView(activeView);},
     hide() {viewEl.hidden=true;subNavEl.replaceChildren();if(notesDialogEl.open)notesDialogEl.close();}
   };
 }
